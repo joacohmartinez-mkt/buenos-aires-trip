@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react'
 import { X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { photoUrl, deletePhoto } from '../lib/photos'
 import { getEventById } from '../lib/events'
-import { useEditMode } from '../lib/editAccess'
 
 export default function Lightbox({ photos, initialIndex = 0, onClose }) {
   const [index, setIndex] = useState(initialIndex)
   const [busy, setBusy] = useState(false)
-  const editing = useEditMode()
 
   useEffect(() => {
     if (!photos.length) onClose()
@@ -41,11 +39,9 @@ export default function Lightbox({ photos, initialIndex = 0, onClose }) {
         <button onClick={onClose} aria-label="Cerrar">
           <X size={26} />
         </button>
-        {editing && (
-          <button onClick={handleDelete} disabled={busy} className="text-rose-400 disabled:opacity-40">
-            <Trash2 size={22} />
-          </button>
-        )}
+        <button onClick={handleDelete} disabled={busy} className="text-rose-400 disabled:opacity-40">
+          <Trash2 size={22} />
+        </button>
       </div>
 
       <div className="relative flex flex-1 items-center justify-center px-3" onClick={(e) => e.stopPropagation()}>

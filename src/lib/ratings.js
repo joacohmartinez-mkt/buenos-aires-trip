@@ -103,6 +103,23 @@ export async function saveRating({ spot_id, spot_name, rating, comment, author }
   return record
 }
 
+export async function deleteRating(spotId, author) {
+  if (isSupabaseConfigured) {
+    const { error } = await supabase
+      .from('spot_ratings')
+      .delete()
+      .eq('spot_id', spotId)
+      .eq('author', author)
+    if (error) throw error
+    await loadRatings()
+  } else {
+    const list = readLocal().filter((r) => !(r.spot_id === spotId && r.author === author))
+    writeLocal(list)
+    cache = list
+    notify()
+  }
+}
+
 // Suscripción para refrescar la UI cuando cambia una calificación
 // (incluye cambios en otra pestaña vía el evento 'storage').
 export function onRatingsChange(cb) {

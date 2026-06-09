@@ -257,11 +257,52 @@ export const DAYS = [
   },
 ]
 
-// 5 imperdibles destacados para el banner del itinerario.
+// Imperdibles del viaje: cada uno con foto y link para investigar (sitio
+// oficial o Google Maps con fotos, reseñas y horarios).
+const IMG = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=70`
+const MAPS = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`
+
 export const HIGHLIGHTS = [
-  { emoji: '🏇', title: 'Hipódromo', subtitle: 'A la vuelta del depto', color: 'amber' },
-  { emoji: '🌹', title: 'Rosedal', subtitle: 'Botes y 12.000 rosas', color: 'emerald' },
-  { emoji: '🍔', title: 'The Laundry', subtitle: 'Burgers + DJ sets', color: 'red' },
-  { emoji: '🍸', title: "Frank's Bar", subtitle: 'Bar secreto', color: 'indigo' },
-  { emoji: '🎭', title: 'San Telmo', subtitle: 'Tango y teatro', color: 'rose' },
+  {
+    emoji: '🏇',
+    title: 'Hipódromo',
+    subtitle: 'A la vuelta del depto',
+    image: IMG('1495543377553-b2aba1f925d7'),
+    url: MAPS('Hipódromo Argentino de Palermo'),
+  },
+  {
+    emoji: '🪐',
+    title: 'Planetario',
+    subtitle: 'Funciones + telescopios',
+    image: IMG('1582594657903-96b4ba495d4d'),
+    url: 'https://planetario.buenosaires.gob.ar/',
+  },
+  {
+    emoji: '🌹',
+    title: 'Rosedal',
+    subtitle: 'Botes y 12.000 rosas',
+    image: IMG('1530906622963-8a60586a49c7'),
+    url: MAPS('El Rosedal de Palermo Buenos Aires'),
+  },
+  {
+    emoji: '🍔',
+    title: 'The Laundry',
+    subtitle: 'Burgers + DJ sets',
+    image: IMG('1550547660-d9450f859349'),
+    url: MAPS('The Laundry Palermo Buenos Aires'),
+  },
+  {
+    emoji: '🍸',
+    title: "Frank's Bar",
+    subtitle: 'Bar secreto',
+    image: IMG('1597241693839-07d7fb803af1'),
+    url: MAPS("Frank's Bar Buenos Aires"),
+  },
+  {
+    emoji: '🎨',
+    title: 'Caminito',
+    subtitle: 'La Boca de colores',
+    image: IMG('1679417302656-9b5170584526'),
+    url: MAPS('Caminito La Boca Buenos Aires'),
+  },
 ]

@@ -5,6 +5,8 @@
 
 import { supabase, isSupabaseConfigured } from './supabase'
 import { DAYS, SPOTS } from '../data/trip'
+import { loadPhotos } from './photos'
+import { loadRatings } from './ratings'
 
 const EVENT = 'events-changed'
 const COLS = 'id, day, time_sort, time, title, type, place, duration, tip, highlight, lat, lng'
@@ -147,9 +149,21 @@ export async function saveEvent(ev) {
 export async function deleteEvent(id) {
   if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
   if (String(id).startsWith('seed-')) return // un evento sembrado-fallback no vive en la DB
+
+  // Cascada: borrar fotos (archivos + filas) y calificaciones del evento, para
+  // que no queden huérfanas en el mapa ni en la galería.
+  const { data: pics } = await supabase.from('photos').select('id, path').eq('event_id', id)
+  if (pics && pics.length) {
+    await supabase.storage.from('fotos').remove(pics.map((p) => p.path))
+    await supabase.from('photos').delete().eq('event_id', id)
+  }
+  await supabase.from('spot_ratings').delete().eq('spot_id', id)
+
   const { error } = await supabase.from('events').delete().eq('id', id)
   if (error) throw error
+
   await loadEvents()
+  await Promise.all([loadPhotos(), loadRatings()])
 }
 
 export function onEventsChange(cb) {

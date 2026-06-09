@@ -1,13 +1,5 @@
-import { Sparkles } from 'lucide-react'
+import { Sparkles, ArrowUpRight } from 'lucide-react'
 import { HIGHLIGHTS } from '../data/trip'
-
-const gradients = {
-  amber: 'from-amber-400 to-orange-500',
-  emerald: 'from-emerald-400 to-teal-500',
-  red: 'from-rose-400 to-red-500',
-  indigo: 'from-indigo-400 to-violet-500',
-  rose: 'from-rose-400 to-pink-500',
-}
 
 export default function Highlights() {
   return (
@@ -18,14 +10,29 @@ export default function Highlights() {
       </div>
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1">
         {HIGHLIGHTS.map((h) => (
-          <article
+          <a
             key={h.title}
-            className={`relative flex h-32 w-32 shrink-0 flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-br p-3 text-white shadow-md ${gradients[h.color]}`}
+            href={h.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative flex h-36 w-32 shrink-0 flex-col justify-end overflow-hidden rounded-2xl bg-gray-800 shadow-md"
           >
-            <span className="absolute right-2 top-2 text-3xl drop-shadow-sm">{h.emoji}</span>
-            <h3 className="text-sm font-bold leading-tight drop-shadow">{h.title}</h3>
-            <p className="text-[11px] font-medium leading-tight text-white/90">{h.subtitle}</p>
-          </article>
+            <img
+              src={h.image}
+              alt={h.title}
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/5" />
+            <span className="absolute left-2 top-2 text-2xl drop-shadow-md">{h.emoji}</span>
+            <span className="absolute right-2 top-2 rounded-full bg-white/20 p-1 text-white backdrop-blur-sm">
+              <ArrowUpRight size={14} />
+            </span>
+            <div className="relative p-3 text-white">
+              <h3 className="text-sm font-bold leading-tight drop-shadow">{h.title}</h3>
+              <p className="text-[11px] font-medium leading-tight text-white/85">{h.subtitle}</p>
+            </div>
+          </a>
         ))}
       </div>
     </section>
