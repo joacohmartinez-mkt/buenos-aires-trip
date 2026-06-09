@@ -1,24 +1,16 @@
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { X, ImagePlus, Camera } from 'lucide-react'
-import { getEvents } from '../lib/events'
 import { uploadPhoto } from '../lib/photos'
-import LocationPicker from './LocationPicker'
+import PhotoPlacePicker from './PhotoPlacePicker'
 
 export default function PhotoUpload({ defaultEventId = null, onClose }) {
   const fileRef = useRef(null)
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState('')
-  const [attach, setAttach] = useState(defaultEventId ? 'event' : 'none')
-  const [eventId, setEventId] = useState(defaultEventId ?? '')
-  const [loc, setLoc] = useState(null)
+  const [place, setPlace] = useState(defaultEventId ? { eventId: defaultEventId } : null)
   const [caption, setCaption] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-
-  const events = useMemo(
-    () => [...getEvents()].sort((a, b) => a.day - b.day || a.time_sort - b.time_sort),
-    [],
-  )
 
   function pickFile(e) {
     const f = e.target.files?.[0]
@@ -33,21 +25,17 @@ export default function PhotoUpload({ defaultEventId = null, onClose }) {
       setError('Elegí una foto primero.')
       return
     }
-    if (attach === 'event' && !eventId) {
-      setError('Elegí a qué evento atarla.')
-      return
-    }
-    if (attach === 'map' && !loc) {
-      setError('Tocá el mapa para marcar dónde va.')
+    if (!place) {
+      setError('Tocá una actividad o un punto del mapa para ubicarla.')
       return
     }
     setBusy(true)
     setError('')
     try {
       await uploadPhoto(file, {
-        eventId: attach === 'event' ? eventId : null,
-        lat: attach === 'map' ? loc.lat : null,
-        lng: attach === 'map' ? loc.lng : null,
+        eventId: place.eventId ?? null,
+        lat: place.lat ?? null,
+        lng: place.lng ?? null,
         caption: caption.trim(),
       })
       onClose()
@@ -57,17 +45,6 @@ export default function PhotoUpload({ defaultEventId = null, onClose }) {
       setBusy(false)
     }
   }
-
-  const seg = (key, label) => (
-    <button
-      onClick={() => setAttach(key)}
-      className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${
-        attach === key ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-      }`}
-    >
-      {label}
-    </button>
-  )
 
   return (
     <div
@@ -99,38 +76,17 @@ export default function PhotoUpload({ defaultEventId = null, onClose }) {
             >
               <ImagePlus size={28} />
               <span className="text-sm font-semibold">Elegir foto del celu</span>
-              <span className="flex items-center gap-1 text-[11px]"><Camera size={12} /> cámara o galería</span>
+              <span className="flex items-center gap-1 text-[11px]">
+                <Camera size={12} /> cámara o galería
+              </span>
             </button>
           )}
 
-          {/* ¿Dónde va? */}
-          <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-400">¿Dónde va?</p>
-          <div className="mt-2 flex gap-2">
-            {seg('event', '📌 A un evento')}
-            {seg('map', '🗺️ Punto en mapa')}
-            {seg('none', '🖼️ Solo galería')}
+          {/* Ubicación en el mapa de actividades */}
+          <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-400">¿Dónde fue?</p>
+          <div className="mt-2">
+            <PhotoPlacePicker value={place} onChange={setPlace} />
           </div>
-
-          {attach === 'event' && (
-            <select
-              value={eventId}
-              onChange={(e) => setEventId(e.target.value)}
-              className="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 focus:border-gray-400 focus:outline-none"
-            >
-              <option value="">Elegí un evento…</option>
-              {events.map((ev) => (
-                <option key={ev.id} value={ev.id}>
-                  Día {ev.day} · {ev.time} · {ev.title}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {attach === 'map' && (
-            <div className="mt-3">
-              <LocationPicker value={loc} onChange={setLoc} />
-            </div>
-          )}
 
           {/* Título */}
           <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-400">

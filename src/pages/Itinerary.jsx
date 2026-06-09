@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import HeroHeader from '../components/HeroHeader'
 import LodgingCard from '../components/LodgingCard'
 import Highlights from '../components/Highlights'
@@ -54,18 +54,12 @@ export default function Itinerary() {
         <span className="absolute bottom-6 left-[26px] top-3 w-0.5 bg-gray-200" />
         <div className="space-y-3">
           {activities.map((a) => (
-            <div key={a.id} className="relative">
-              <ActivityCard activity={a} />
-              {editing && (
-                <button
-                  onClick={() => setForm({ event: a })}
-                  className="absolute right-3 top-3 z-[5] flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-white shadow-md"
-                  aria-label="Editar evento"
-                >
-                  <Pencil size={14} />
-                </button>
-              )}
-            </div>
+            <ActivityCard
+              key={a.id}
+              activity={a}
+              editing={editing}
+              onEdit={() => setForm({ event: a })}
+            />
           ))}
         </div>
 

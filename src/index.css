@@ -43,6 +43,36 @@
 .leaflet-popup-tip {
   box-shadow: none;
 }
+/* ----- Animación del candado que se desbloquea con corazón ----- */
+.uh-overlay {
+  animation: uh-fade 1.6s ease both;
+}
+@keyframes uh-fade {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  78% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.uh-shackle {
+  transform-box: view-box;
+  transform-origin: 70px 50px;
+  animation: uh-open 0.6s cubic-bezier(0.5, 1.6, 0.5, 1) 0.15s both;
+}
+@keyframes uh-open {
+  from { transform: rotate(0) translateY(0); }
+  to { transform: rotate(-34deg) translateY(-3px); }
+}
+.uh-heart {
+  transform-box: view-box;
+  transform-origin: 50px 78px;
+  animation: uh-pop 0.55s cubic-bezier(0.3, 1.7, 0.5, 1) 0.4s both;
+}
+@keyframes uh-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* Pin del selector de ubicación (gota) */
 .picker-pin > div {
   width: 22px;

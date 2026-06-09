@@ -13,6 +13,7 @@ import {
   Clock,
   MapPin,
   ChevronDown,
+  Pencil,
 } from 'lucide-react'
 import { typeStyle } from '../lib/styles'
 
@@ -30,9 +31,9 @@ const ICONS = {
   otro: MapPin,
 }
 
-// Tarjeta de evento colapsable: muestra hora + título + categoría siempre, y al
-// tocarla despliega lugar + tip. Así el día entero se ve sin scrollear tanto.
-export default function ActivityCard({ activity }) {
+// Tarjeta de evento colapsable: hora + título + categoría siempre visibles, y al
+// tocarla se despliega lugar + tip. En modo edición muestra un lápiz fantasma.
+export default function ActivityCard({ activity, editing = false, onEdit }) {
   const [open, setOpen] = useState(false)
   const style = typeStyle(activity.type)
   const Icon = ICONS[activity.type] ?? MapPin
@@ -45,9 +46,9 @@ export default function ActivityCard({ activity }) {
       />
 
       <article className="animate-fade-in overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <button
+        <div
           onClick={() => hasDetails && setOpen((v) => !v)}
-          className="flex w-full items-start gap-3 p-3 text-left"
+          className={`flex items-start gap-3 p-3 ${hasDetails ? 'cursor-pointer' : ''}`}
         >
           <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${style.chipBg} ${style.chipText}`}>
             <Icon size={18} />
@@ -70,20 +71,34 @@ export default function ActivityCard({ activity }) {
                 {style.emoji} {style.label}
               </span>
               {activity.highlight && (
-                <span className="rounded-full bg-gray-900 px-2 py-0.5 text-[11px] font-semibold text-white">
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
                   {activity.highlight}
                 </span>
               )}
             </div>
           </div>
 
-          {hasDetails && (
-            <ChevronDown
-              size={18}
-              className={`mt-1 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
-            />
-          )}
-        </button>
+          <div className="flex shrink-0 items-center gap-1">
+            {editing && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEdit?.()
+                }}
+                className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Editar evento"
+              >
+                <Pencil size={15} />
+              </button>
+            )}
+            {hasDetails && (
+              <ChevronDown
+                size={18}
+                className={`mt-0.5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+              />
+            )}
+          </div>
+        </div>
 
         {open && hasDetails && (
           <div className="animate-fade-in space-y-2 px-3 pb-3 pl-[52px]">

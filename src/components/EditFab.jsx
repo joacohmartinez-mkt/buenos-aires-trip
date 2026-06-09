@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Lock, Unlock, X } from 'lucide-react'
 import { useEditMode, tryUnlock, lock } from '../lib/editAccess'
+import UnlockHeart from './UnlockHeart'
 
 export default function EditFab() {
   const editing = useEditMode()
   const [showPin, setShowPin] = useState(false)
   const [pin, setPin] = useState('')
   const [err, setErr] = useState(false)
+  const [showUnlock, setShowUnlock] = useState(false)
 
   async function submit(e) {
     e.preventDefault()
@@ -14,6 +16,7 @@ export default function EditFab() {
       setShowPin(false)
       setPin('')
       setErr(false)
+      setShowUnlock(true)
     } else {
       setErr(true)
       setPin('')
@@ -69,6 +72,8 @@ export default function EditFab() {
           </form>
         </div>
       )}
+
+      {showUnlock && <UnlockHeart onDone={() => setShowUnlock(false)} />}
     </>
   )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ImagePlus, Camera } from 'lucide-react'
+import { ImagePlus } from 'lucide-react'
 import { getPhotos, loadPhotos, onPhotosChange, photoUrl } from '../lib/photos'
 import PhotoUpload from '../components/PhotoUpload'
 import Lightbox from '../components/Lightbox'
@@ -38,10 +38,21 @@ export default function Photos() {
       </div>
 
       {photos.length === 0 ? (
-        <div className="mx-4 mt-6 flex flex-col items-center gap-2 rounded-3xl border-2 border-dashed border-gray-200 py-14 text-center text-gray-400">
-          <Camera size={32} />
-          <p className="text-sm font-medium">Subí la primera foto del viaje</p>
-          <p className="text-xs">Tocá “Subir foto” para empezar</p>
+        <div className="mt-5 px-4">
+          <p className="mb-3 text-center text-sm font-medium text-gray-400">
+            Subí la primera foto del viaje <span className="text-rose-400">❤️</span>
+          </p>
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              onClick={() => setUploading(true)}
+              className="flex aspect-square items-center justify-center rounded-xl border-2 border-dashed border-gray-300 text-gray-400 transition-colors hover:border-rose-300 hover:bg-rose-50/50 hover:text-rose-400"
+            >
+              <ImagePlus size={24} />
+            </button>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="aspect-square rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/40" />
+            ))}
+          </div>
         </div>
       ) : (
         <div className="mt-4 grid grid-cols-3 gap-1.5 px-4">
