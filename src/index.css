@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    /* gris exterior: en desktop enmarca la columna de 640px como un teléfono */
+    @apply bg-gray-200 text-gray-900 antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+}
+
+@layer utilities {
+  /* Oculta la barra de scroll en los tabs horizontales pero mantiene el scroll */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  /* Respeta el notch / home indicator en iOS */
+  .pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+  }
+}
+
+/* ----- Leaflet: ajustes finos sobre el CSS base ----- */
+.leaflet-container {
+  font-family: 'Inter', sans-serif;
+  background: #e5e7eb;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+.leaflet-popup-content {
+  margin: 12px 14px;
+}
+.leaflet-popup-tip {
+  box-shadow: none;
+}
+/* Marcador circular con emoji */
+.spot-marker {
+  background: transparent;
+  border: none;
+}
+.spot-marker > div {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border: 2.5px solid #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+.spot-marker.is-active > div {
+  transform: scale(1.25);
+}
