@@ -14,8 +14,13 @@ import {
   MapPin,
   Lightbulb,
   ChevronDown,
+  ImagePlus,
 } from 'lucide-react'
 import { typeStyle } from '../lib/styles'
+import { useEditMode } from '../lib/editAccess'
+import { getPhotosByEvent, photoUrl } from '../lib/photos'
+import PhotoUpload from './PhotoUpload'
+import Lightbox from './Lightbox'
 
 const ICONS = {
   alojamiento: Home,
@@ -33,8 +38,12 @@ const ICONS = {
 
 export default function ActivityCard({ activity }) {
   const [open, setOpen] = useState(false)
+  const [lb, setLb] = useState(null) // índice de foto | null
+  const [up, setUp] = useState(false)
+  const editing = useEditMode()
   const style = typeStyle(activity.type)
   const Icon = ICONS[activity.type] ?? MapPin
+  const photos = getPhotosByEvent(activity.id)
 
   return (
     <div className="relative pl-10">
@@ -114,7 +123,34 @@ export default function ActivityCard({ activity }) {
             )}
           </>
         )}
+
+        {/* Fotos del evento */}
+        {(photos.length > 0 || editing) && (
+          <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
+            {photos.map((p, i) => (
+              <button
+                key={p.id}
+                onClick={() => setLb(i)}
+                className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100"
+              >
+                <img src={photoUrl(p.path)} alt={p.caption || 'foto'} loading="lazy" className="h-full w-full object-cover" />
+              </button>
+            ))}
+            {editing && (
+              <button
+                onClick={() => setUp(true)}
+                className="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600"
+              >
+                <ImagePlus size={16} />
+                <span className="text-[9px] font-semibold">Foto</span>
+              </button>
+            )}
+          </div>
+        )}
       </article>
+
+      {up && <PhotoUpload defaultEventId={activity.id} onClose={() => setUp(false)} />}
+      {lb != null && <Lightbox photos={photos} initialIndex={lb} onClose={() => setLb(null)} />}
     </div>
   )
 }

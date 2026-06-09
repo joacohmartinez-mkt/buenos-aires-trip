@@ -4,6 +4,7 @@ import BottomNav from './components/BottomNav'
 import EditFab from './components/EditFab'
 import Itinerary from './pages/Itinerary'
 import MapRatings from './pages/MapRatings'
+import Photos from './pages/Photos'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -29,6 +30,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Itinerary />} />
           <Route path="/mapa" element={<MapRatings />} />
+          <Route path="/fotos" element={<Photos />} />
         </Routes>
         <Footer />
       </main>

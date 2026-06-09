@@ -9,6 +9,7 @@ import EventForm from '../components/EventForm'
 import { DAYS } from '../data/trip'
 import { dayTheme } from '../lib/styles'
 import { getEventsByDay, loadEvents, onEventsChange } from '../lib/events'
+import { loadPhotos, onPhotosChange } from '../lib/photos'
 import { useEditMode } from '../lib/editAccess'
 
 export default function Itinerary() {
@@ -19,7 +20,13 @@ export default function Itinerary() {
 
   useEffect(() => {
     loadEvents()
-    return onEventsChange(() => setV((v) => v + 1))
+    loadPhotos()
+    const offE = onEventsChange(() => setV((v) => v + 1))
+    const offP = onPhotosChange(() => setV((v) => v + 1))
+    return () => {
+      offE()
+      offP()
+    }
   }, [])
 
   const day = DAYS.find((d) => d.id === activeId) ?? DAYS[0]

@@ -6,8 +6,17 @@ import { DAY_FILTERS } from '../data/trip'
 import { typeStyle } from '../lib/styles'
 import { getAverage, onRatingsChange, loadRatings } from '../lib/ratings'
 import { getMapEvents, loadEvents, onEventsChange } from '../lib/events'
+import {
+  getFreePhotos,
+  getPhotosByEvent,
+  countByEvent,
+  photoUrl,
+  loadPhotos,
+  onPhotosChange,
+} from '../lib/photos'
 import Stars from '../components/Stars'
 import RatingModal from '../components/RatingModal'
+import Lightbox from '../components/Lightbox'
 
 const dayMeta = Object.fromEntries(DAY_FILTERS.map((f) => [f.day, f]))
 
@@ -25,11 +34,12 @@ const PILL_ACTIVE = {
   rose: 'bg-rose-500 text-white shadow',
 }
 
-function makeIcon(spot, active) {
+function makeIcon(spot, active, photoCount = 0) {
   const style = typeStyle(spot.type)
+  const badge = photoCount > 0 ? `<span class="photo-badge">📷 ${photoCount}</span>` : ''
   return L.divIcon({
     className: `spot-marker${active ? ' is-active' : ''}`,
-    html: `<div style="background:${style.marker}">${style.emoji}</div>`,
+    html: `<div style="background:${style.marker}">${style.emoji}</div>${badge}`,
     iconSize: [36, 36],
     iconAnchor: [18, 18],
     popupAnchor: [0, -20],
@@ -64,17 +74,21 @@ export default function MapRatings() {
   const [filterDay, setFilterDay] = useState(0)
   const [selected, setSelected] = useState(null)
   const [modalSpot, setModalSpot] = useState(null)
+  const [lightbox, setLightbox] = useState(null) // array de fotos | null
   const [version, setVersion] = useState(0)
 
-  // Cargar eventos + calificaciones al montar y refrescar cuando cambian.
+  // Cargar eventos + calificaciones + fotos al montar y refrescar al cambiar.
   useEffect(() => {
     loadRatings()
     loadEvents()
+    loadPhotos()
     const offR = onRatingsChange(() => setVersion((v) => v + 1))
     const offE = onEventsChange(() => setVersion((v) => v + 1))
+    const offP = onPhotosChange(() => setVersion((v) => v + 1))
     return () => {
       offR()
       offE()
+      offP()
     }
   }, [])
 
@@ -163,11 +177,12 @@ export default function MapRatings() {
           <MapController selected={selected} spots={filtered} fitKey={filterDay} />
           {filtered.map((spot) => {
             const { avg, count } = getAverage(spot.id)
+            const pc = countByEvent(spot.id)
             return (
               <Marker
                 key={spot.id + version}
                 position={[spot.lat, spot.lng]}
-                icon={makeIcon(spot, selected?.id === spot.id)}
+                icon={makeIcon(spot, selected?.id === spot.id, pc)}
                 eventHandlers={{ click: () => setSelected(spot) }}
               >
                 <Popup>
@@ -181,6 +196,14 @@ export default function MapRatings() {
                         <span className="text-xs text-gray-400">Sin calificar</span>
                       )}
                     </div>
+                    {pc > 0 && (
+                      <button
+                        onClick={() => setLightbox(getPhotosByEvent(spot.id))}
+                        className="mt-2 w-full rounded-lg bg-gray-100 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-200"
+                      >
+                        📷 Ver {pc} {pc === 1 ? 'foto' : 'fotos'}
+                      </button>
+                    )}
                     <button
                       onClick={() => setModalSpot(spot)}
                       className="mt-2 w-full rounded-lg bg-gray-900 py-1.5 text-xs font-bold text-white hover:bg-gray-800"
@@ -192,6 +215,21 @@ export default function MapRatings() {
               </Marker>
             )
           })}
+
+          {/* Fotos sueltas (sin evento): miniatura propia en el mapa */}
+          {getFreePhotos().map((p) => (
+            <Marker
+              key={'photo-' + p.id + version}
+              position={[p.lat, p.lng]}
+              icon={L.divIcon({
+                className: 'photo-marker',
+                html: `<div style="background-image:url('${photoUrl(p.path)}')"></div>`,
+                iconSize: [44, 44],
+                iconAnchor: [22, 22],
+              })}
+              eventHandlers={{ click: () => setLightbox([p]) }}
+            />
+          ))}
         </MapContainer>
       </div>
 
@@ -246,6 +284,7 @@ export default function MapRatings() {
       </ul>
 
       {modalSpot && <RatingModal spot={modalSpot} onClose={() => setModalSpot(null)} />}
+      {lightbox && <Lightbox photos={lightbox} onClose={() => setLightbox(null)} />}
     </div>
   )
 }

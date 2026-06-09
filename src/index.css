@@ -66,6 +66,22 @@
   background-position: center;
 }
 
+/* Badge de cantidad de fotos sobre el marcador de un evento */
+.spot-marker .photo-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: #111827;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 9999px;
+  border: 1.5px solid #fff;
+  white-space: nowrap;
+}
+
 /* Marcador circular con emoji */
 .spot-marker {
   background: transparent;
