@@ -1,12 +1,9 @@
 import { TRIP } from '../data/trip'
 
-// Foto del hero. Si la imagen no carga, se muestra automáticamente la
-// ilustración del skyline que está debajo.
-// Para usar otra: poné la imagen en `public/` (ej: public/hero.jpg) y cambiá
-// esta constante por la ruta (ej: './hero.jpg').
-// Foto actual: tango en Buenos Aires (Nathana Rebouças · Unsplash).
-const HERO_IMAGE =
-  'https://images.unsplash.com/flagged/photo-1576542062543-b11118d96d53?auto=format&fit=crop&w=1200&q=80'
+// Foto del hero (Joaquín & Nicole ❤️). El archivo está en public/portada.jpg.
+// Si la imagen no carga, se muestra automáticamente la ilustración del skyline.
+// Para cambiarla: reemplazá public/portada.jpg por otra con el mismo nombre.
+const HERO_IMAGE = './portada.jpg'
 
 export default function HeroHeader() {
   return (
