@@ -43,6 +43,29 @@
 .leaflet-popup-tip {
   box-shadow: none;
 }
+/* Pin del selector de ubicación (gota) */
+.picker-pin > div {
+  width: 22px;
+  height: 22px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  margin: 4px;
+  background: #111827;
+  border: 2.5px solid #fff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Miniatura de foto sobre el mapa */
+.photo-marker > div {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2.5px solid #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  background-size: cover;
+  background-position: center;
+}
+
 /* Marcador circular con emoji */
 .spot-marker {
   background: transparent;

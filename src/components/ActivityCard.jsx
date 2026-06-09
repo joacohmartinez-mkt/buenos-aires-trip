@@ -28,6 +28,7 @@ const ICONS = {
   teatro: Drama,
   ciencia: Telescope,
   ferry: Ship,
+  otro: MapPin,
 }
 
 export default function ActivityCard({ activity }) {

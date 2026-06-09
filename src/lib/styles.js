@@ -83,6 +83,14 @@ export const TYPE_STYLES = {
     chipBg: 'bg-teal-100',
     chipText: 'text-teal-700',
   },
+  otro: {
+    emoji: '📍',
+    label: 'Otro',
+    marker: '#64748b',
+    dot: 'bg-slate-500',
+    chipBg: 'bg-slate-100',
+    chipText: 'text-slate-700',
+  },
 }
 
 export const typeStyle = (type) => TYPE_STYLES[type] ?? TYPE_STYLES.paseo

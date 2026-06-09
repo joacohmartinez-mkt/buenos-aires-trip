@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import BottomNav from './components/BottomNav'
+import EditFab from './components/EditFab'
 import Itinerary from './pages/Itinerary'
 import MapRatings from './pages/MapRatings'
 
@@ -31,6 +32,7 @@ export default function App() {
         </Routes>
         <Footer />
       </main>
+      <EditFab />
       <BottomNav />
     </div>
   )

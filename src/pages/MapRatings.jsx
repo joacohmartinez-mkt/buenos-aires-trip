@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { Star, Plus } from 'lucide-react'
-import { SPOTS, DAY_FILTERS } from '../data/trip'
+import { DAY_FILTERS } from '../data/trip'
 import { typeStyle } from '../lib/styles'
 import { getAverage, onRatingsChange, loadRatings } from '../lib/ratings'
+import { getMapEvents, loadEvents, onEventsChange } from '../lib/events'
 import Stars from '../components/Stars'
 import RatingModal from '../components/RatingModal'
 
@@ -65,16 +66,32 @@ export default function MapRatings() {
   const [modalSpot, setModalSpot] = useState(null)
   const [version, setVersion] = useState(0)
 
-  // Cargar calificaciones al montar y refrescar cuando cambia alguna.
+  // Cargar eventos + calificaciones al montar y refrescar cuando cambian.
   useEffect(() => {
     loadRatings()
-    return onRatingsChange(() => setVersion((v) => v + 1))
+    loadEvents()
+    const offR = onRatingsChange(() => setVersion((v) => v + 1))
+    const offE = onEventsChange(() => setVersion((v) => v + 1))
+    return () => {
+      offR()
+      offE()
+    }
   }, [])
 
-  const filtered = useMemo(
-    () => (filterDay === 0 ? SPOTS : SPOTS.filter((s) => s.day === filterDay)),
-    [filterDay],
-  )
+  const filtered = useMemo(() => {
+    // Eventos con ubicación, normalizados al shape que usa el mapa.
+    const spots = getMapEvents().map((e) => ({
+      id: e.id,
+      name: e.title,
+      address: e.place,
+      type: e.type,
+      day: e.day,
+      lat: e.lat,
+      lng: e.lng,
+    }))
+    return filterDay === 0 ? spots : spots.filter((s) => s.day === filterDay)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterDay, version])
 
   function selectSpot(spot) {
     setSelected(spot)
