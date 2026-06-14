@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Heart, Trash2, ChevronDown, Pencil } from 'lucide-react'
-import { kindById, kindTone, memoryPhotoUrl, addHeart, deleteMemory } from '../lib/memories'
+import { kindById, kindTone, memoryPhotoUrl, deleteMemory } from '../lib/memories'
 
 // Fecha 'YYYY-MM-DD' → '14 jun 2026'
 function formatDate(iso) {
@@ -16,10 +16,12 @@ function formatDate(iso) {
   }
 }
 
-export default function MemoryCard({ memory, rotate = 0, featured = false, defaultOpen = false, onEdit }) {
+export default function MemoryCard({ memory, rotate = 0, featured = false, defaultOpen = false, onEdit, onLike, who, editing = false }) {
   const [open, setOpen] = useState(defaultOpen)
   const kind = kindById(memory.kind)
   const url = memoryPhotoUrl(memory.path)
+  const likeCount = memory.liked_by?.length ?? 0
+  const liked = Boolean(who && memory.liked_by?.includes(who))
 
   async function handleDelete(e) {
     e.stopPropagation()
@@ -32,9 +34,9 @@ export default function MemoryCard({ memory, rotate = 0, featured = false, defau
     }
   }
 
-  function handleHeart(e) {
+  function handleLike(e) {
     e.stopPropagation()
-    addHeart(memory)
+    onLike?.(memory)
   }
 
   function handleEdit(e) {
@@ -98,27 +100,33 @@ export default function MemoryCard({ memory, rotate = 0, featured = false, defau
             )}
             <div className="flex items-center gap-3">
               <button
-                onClick={handleHeart}
-                className="flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-500 transition-transform active:scale-90"
-                aria-label="Sumar un corazón"
+                onClick={handleLike}
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition-transform active:scale-90 ${
+                  liked ? 'bg-rose-100 text-rose-600' : 'bg-gray-100 text-gray-400'
+                }`}
+                aria-label={liked ? 'Quitar mi me gusta' : 'Me gusta'}
               >
-                <Heart size={14} className="fill-rose-500" />
-                {memory.hearts > 0 && memory.hearts}
+                <Heart size={14} className={liked ? 'fill-rose-500 text-rose-500' : ''} />
+                {likeCount > 0 && likeCount}
               </button>
-              <button
-                onClick={handleEdit}
-                className="text-gray-300 transition-colors hover:text-gray-600"
-                aria-label="Editar recuerdo"
-              >
-                <Pencil size={15} />
-              </button>
-              <button
-                onClick={handleDelete}
-                className="text-gray-300 transition-colors hover:text-rose-400"
-                aria-label="Borrar recuerdo"
-              >
-                <Trash2 size={15} />
-              </button>
+              {editing && (
+                <>
+                  <button
+                    onClick={handleEdit}
+                    className="text-gray-300 transition-colors hover:text-gray-600"
+                    aria-label="Editar recuerdo"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="text-gray-300 transition-colors hover:text-rose-400"
+                    aria-label="Borrar recuerdo"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

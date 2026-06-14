@@ -11,7 +11,6 @@ import { resizeImage } from './photos'
 
 const EVENT = 'memories-changed'
 const BUCKET = 'fotos'
-const COLS = 'id, title, note, kind, memory_date, author, hearts, path, created_at'
 
 let cache = []
 const notify = () => window.dispatchEvent(new Event(EVENT))
@@ -37,6 +36,25 @@ const KIND_TONE = {
 }
 export const kindTone = (id) => KIND_TONE[kindById(id).color] ?? KIND_TONE.rose
 
+// Identidad de "quién sos" en este dispositivo (compartida con el form de alta).
+const WHO_KEY = 'memoryAuthor'
+export const getWho = () => {
+  try {
+    return localStorage.getItem(WHO_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+export const setWho = (w) => {
+  try {
+    localStorage.setItem(WHO_KEY, w)
+  } catch {}
+}
+
+// Likes: helpers para leer cuántos y si lo likeó tal persona.
+export const likeCount = (m) => (Array.isArray(m?.liked_by) ? m.liked_by.length : 0)
+export const likedByMe = (m, who) => Boolean(who && Array.isArray(m?.liked_by) && m.liked_by.includes(who))
+
 // ---- Lecturas sincrónicas ----
 export const getMemories = () => cache
 
@@ -54,7 +72,7 @@ export async function loadMemories() {
   }
   const { data, error } = await supabase
     .from('memories')
-    .select(COLS)
+    .select('*')
     .order('memory_date', { ascending: false })
     .order('created_at', { ascending: false })
   if (!error && Array.isArray(data)) {
@@ -122,18 +140,22 @@ export async function deleteMemory(memory) {
   await loadMemories()
 }
 
-// Sumar un corazón (reacción compartida). Optimista: actualiza la caché ya y
-// revierte si Supabase falla.
-export async function addHeart(memory) {
+// Like POR PERSONA (toggle). Cada uno (Joaquín / Nicole) puede dar un solo like.
+// Optimista: actualiza la caché ya y revierte (recargando) si Supabase falla.
+export async function toggleLike(memory, person) {
   const m = cache.find((x) => x.id === memory.id)
-  if (!m) return
-  m.hearts = (m.hearts ?? 0) + 1
+  if (!m || !person) return
+  const set = new Set(Array.isArray(m.liked_by) ? m.liked_by : [])
+  if (set.has(person)) set.delete(person)
+  else set.add(person)
+  const next = [...set]
+  m.liked_by = next
   notify()
   if (!isSupabaseConfigured) return
-  const { error } = await supabase.from('memories').update({ hearts: m.hearts }).eq('id', m.id)
+  const { error } = await supabase.from('memories').update({ liked_by: next }).eq('id', m.id)
   if (error) {
-    m.hearts -= 1
-    notify()
+    console.error('No se pudo actualizar el like', error)
+    await loadMemories() // revertir al estado real de la nube
   }
 }
 
