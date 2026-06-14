@@ -23,9 +23,12 @@ ANTES DE TOCAR NADA:
 
 Cosas clave que ya están resueltas (no las re-hagas):
 - Backend en Supabase (proyecto hhyvuywboqkbqjbturgf), claves ya puestas en
-  src/lib/supabaseConfig.js. Tablas: events, photos, spot_ratings + bucket "fotos".
-- Eventos editables (CRUD) detrás de un PIN suave (0103). Calificaciones y fotos
-  son abiertas. El mapa y el itinerario leen de la misma capa de datos (lib/events.js).
+  src/lib/supabaseConfig.js. Tablas: events, photos, spot_ratings, memories + bucket "fotos".
+- 4 pestañas: Itinerario, Mapa & Ratings, Fotos, Recuerdos.
+- Eventos y Recuerdos editables (CRUD) detrás de un PIN suave (0103). Calificaciones,
+  fotos y likes de recuerdos son abiertos. El mapa y el itinerario leen de la misma
+  capa de datos (lib/events.js); cada feature tiene su capa en lib/ (mismo patrón).
+- Itinerario tiene cuenta regresiva + clima (Open-Meteo, lib/weather.js).
 - Deploy automático: cada `git push` a main publica solo (GitHub Actions). La cuenta
   gh ya está logueada como joacohmartinez-mkt.
 

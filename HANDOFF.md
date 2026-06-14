@@ -15,20 +15,22 @@ App **mobile-first** de itinerario de viaje para una pareja (**Joaquín & Nicole
 - **Repo:** https://github.com/joacohmartinez-mkt/buenos-aires-trip
 - **Carpeta local:** `/Users/joaquinmartinez/Documents/workspace/buenos-aires-trip`
 
-Tiene **3 pestañas** (nav inferior): **Itinerario** (`/`), **Mapa & Ratings** (`/mapa`), **Fotos** (`/fotos`).
+Tiene **4 pestañas** (nav inferior): **Itinerario** (`/`), **Mapa & Ratings** (`/mapa`), **Fotos** (`/fotos`), **Recuerdos** (`/recuerdos`).
 
 ---
 
 ## 2. Estado actual (qué está hecho)
 
 ✅ Itinerario de 4 días, eventos **colapsables** (tap para desplegar lugar + tip).
+✅ **Cuenta regresiva** al viaje + **clima** de los días (en la portada del itinerario).
 ✅ Mapa interactivo (Leaflet) con marcadores por tipo, fly-to, filtros por día.
 ✅ **Eventos editables** (agregar/editar/borrar) con selector de ubicación (tap mapa + búsqueda de dirección). Detrás de **PIN**.
 ✅ **Calificaciones** compartidas (estrellas, comentario, autor) + **fotos** + editar/borrar.
 ✅ **Sección de Fotos**: galería, subida desde el celu (con resize), fotos en el mapa (badge por evento + miniaturas sueltas) y por evento.
+✅ **Sección de Recuerdos** (4ª tab): muro estilo polaroid de momentos de la pareja (no solo del viaje). Notitas colapsables (título + adelanto) que al tocarlas se abren como **página de cuaderno** (papel rayado). Tipos (momento/sueño/promesa/canción/lugar), foto opcional, **likes por persona** (toggle, máx 2), "Recuerdo del día" al azar. Agregar/editar/borrar **detrás del PIN**; likear queda abierto.
 ✅ **Supabase** como backend (datos compartidos y sincronizados).
 ✅ Deploy automático en **GitHub Pages** (cuenta personal).
-✅ Detalles: fotos propias (pareja + Casa Rosada), imperdibles con foto y link, animación de candado-corazón al desbloquear.
+✅ Detalles: fotos propias (pareja + Casa Rosada), portada sin chips (limpia), imperdibles con foto y link, animación de candado-corazón al desbloquear.
 
 ---
 
@@ -55,11 +57,17 @@ buenos-aires-trip/
 │   │   ├── supabase.js        ← cliente supabase (o null si no hay claves)
 │   │   ├── events.js          ← capa de datos de EVENTOS (cache+async+seed+fallback)
 │   │   ├── ratings.js         ← capa de datos de CALIFICACIONES
-│   │   ├── photos.js          ← capa de datos de FOTOS (upload+resize+storage)
+│   │   ├── photos.js          ← capa de datos de FOTOS (upload+resize+storage; exporta resizeImage)
+│   │   ├── memories.js        ← capa de datos de RECUERDOS (CRUD + likes por persona + identidad)
+│   │   ├── weather.js         ← clima del viaje (Open-Meteo: pronóstico ≤16d / histórico)
 │   │   ├── editAccess.js      ← candado PIN (hash sha256 + sessionStorage + hook)
 │   │   └── styles.js          ← TYPE_STYLES (colores/emoji por tipo) y DAY_THEMES
 │   ├── components/
 │   │   ├── HeroHeader.jsx     ← portada con foto de la pareja (HERO_IMAGE)
+│   │   ├── Countdown.jsx      ← cuenta regresiva (tarjeta solapada al hero)
+│   │   ├── WeatherStrip.jsx   ← tira de clima de los 4 días
+│   │   ├── MemoryCard.jsx     ← notita polaroid colapsable / vista cuaderno (like+editar+borrar)
+│   │   ├── MemoryForm.jsx     ← form alta/edición de recuerdo (foto opcional)
 │   │   ├── LodgingCard.jsx, DayTabs.jsx, Stars.jsx, BottomNav.jsx
 │   │   ├── Highlights.jsx     ← imperdibles (foto + link externo)
 │   │   ├── ActivityCard.jsx   ← tarjeta de evento colapsable (+ lápiz editar)
@@ -74,11 +82,13 @@ buenos-aires-trip/
 │   ├── pages/
 │   │   ├── Itinerary.jsx      ← "/"  (hero, lodging, imperdibles, tabs, timeline)
 │   │   ├── MapRatings.jsx     ← "/mapa" (banner Casa Rosada, filtros, mapa, lista)
-│   │   └── Photos.jsx         ← "/fotos" (galería)
+│   │   ├── Photos.jsx         ← "/fotos" (galería)
+│   │   └── Recuerdos.jsx      ← "/recuerdos" (muro polaroid, recuerdo del día, likes, candado)
 │   ├── App.jsx, main.jsx, index.css
 ├── public/                   ← portada.jpg (pareja), mapa-buenosaires.jpg (Casa Rosada), favicon.svg
 ├── scripts/gen-seed.mjs      ← genera SQL de seed desde trip.js (ya no se usa; el seed es automático)
-├── supabase-full-setup.sql   ← SQL completo de Supabase (correr una vez)
+├── supabase-full-setup.sql   ← SQL completo de Supabase (todas las tablas, correr una vez)
+├── supabase-memories-setup.sql ← SQL de la tabla `memories` (Recuerdos) — incl. columna liked_by
 ├── .github/workflows/deploy.yml ← deploy automático
 ├── .claude/launch.json       ← config del dev server (puerto 5188) — está en la RAÍZ del workspace
 └── README.md
@@ -95,8 +105,10 @@ Proyecto Supabase: **`hhyvuywboqkbqjbturgf`** (cuenta personal: `joacohmartinez@
 | **events** | id(uuid), day(1-4), time_sort(min), time(texto), title, type, place, duration, tip, highlight, lat, lng | Itinerario. RLS `events_all` (todo abierto). |
 | **photos** | id, event_id(fk→events, on delete set null), lat, lng, caption, path | `path` = ruta en Storage. RLS `photos_all`. |
 | **spot_ratings** | spot_id(= events.id), spot_name, rating(1-5), comment, author | 1 por (spot_id, author). RLS select/insert/update/delete abiertos. |
+| **memories** | id(uuid), title, note, kind, memory_date, author, hearts(legacy), **liked_by(text[])**, path, created_at | Recuerdos. `liked_by` = nombres que dieron like (Joaquín/Nicole). `path` = foto en bucket `fotos` (opcional). RLS `memories_all` (todo abierto). |
 
-- **Storage**: bucket público **`fotos`** (políticas read/insert/delete abiertas).
+- **Storage**: bucket público **`fotos`** (políticas read/insert/delete abiertas). Las fotos de **Recuerdos** reusan este mismo bucket.
+- ⚠️ La columna **`liked_by`** se agregó después de crear la tabla. Si clonás/recreás, está en `supabase-full-setup.sql` y en `supabase-memories-setup.sql` (ambos idempotentes, con `alter table ... add column if not exists`).
 - **Claves** (en `src/lib/supabaseConfig.js`): la **publishable key** es **pública por diseño** (va en el JS del sitio). La seguridad la dan las políticas RLS.
 - Para recrear todo de cero: correr **`supabase-full-setup.sql`** en el SQL Editor.
 
@@ -110,6 +122,14 @@ Proyecto Supabase: **`hhyvuywboqkbqjbturgf`** (cuenta personal: `joacohmartinez@
 - **Auto-seed**: la primera vez que `events` está vacía, la app la siembra desde `trip.js` (`loadEvents()` en `events.js`). `trip.js` es la "fuente semilla".
 - **Borrar un evento** hace **cascada**: borra sus fotos (+archivos de storage) y calificaciones (`deleteEvent` en `events.js`).
 - **El mapa y el itinerario leen de `events.js`** → cualquier cambio se refleja en ambos automáticamente.
+
+**Recuerdos** (`memories.js` / `Recuerdos.jsx` / `MemoryCard.jsx` / `MemoryForm.jsx`):
+- Misma arquitectura de capa de datos (caché + async + evento `memories-changed` + fallback). `loadMemories()` usa `select('*')` a propósito (resiliente: no se rompe si falta alguna columna).
+- **Likes POR PERSONA**: columna `liked_by` (array de nombres). `toggleLike(memory, persona)` agrega/saca a la persona (máx 1 c/u → máx 2). Reemplaza al viejo contador `hearts` que se podía spamear (ya no se usa para mostrar; el conteo sale de `liked_by.length`).
+- **Identidad** ("¿quién sos?") por dispositivo: `localStorage` clave `memoryAuthor` (la misma que setea el form al elegir autor). Si no está y tocás un like, la app pregunta una vez (modal Joaquín/Nicole) y la recuerda.
+- **Permisos**: agregar/editar/borrar recuerdos están **detrás del PIN** (`useEditMode()`), igual que los eventos. **Likear queda ABIERTO** (sin PIN). Borrar pide **doble confirmación**.
+- **Recuerdo del día**: destacado al azar **estable por día** (`seed = YYYYMMDD % cantidad`), aparece con ≥3 recuerdos y arranca expandido. NO es random por refresh (decisión del usuario: que sea "del día").
+- ⚠️ Edge conocido (aceptado): dos likes simultáneos de ambos en la MISMA nota en el mismo instante podrían pisarse (se guarda el array completo). Irrelevante en uso real (2 personas, toques esporádicos). Si se quisiera robustez total → tabla aparte `memory_likes(memory_id, author)`.
 
 **Candado / permisos** (`editAccess.js`):
 - PIN **`0103`** (guardado como hash sha256, no en texto plano). Para cambiarlo: `printf '%s' 'NUEVOPIN' | shasum -a 256` y pegar el hash en `editAccess.js`.
@@ -169,6 +189,11 @@ sobre los tabs (`a[href="#/mapa"]`) en vez de setear `location.hash`.
 - ⚠️ **GitHub Actions / Node 20**: el workflow tira un warning de deprecación de
   Node 20 (actions corriendo en Node 20; forzado a Node 24 desde ~16/jun/2026).
   Hoy deploya bien; si en el futuro falla, actualizar las `actions/*` o el runtime.
+- ℹ️ **Clima (Open-Meteo, sin API key)**: el pronóstico real solo está disponible
+  cuando faltan **≤16 días**; antes la tira muestra **"Promedio histórico"** (años
+  anteriores). Para el viaje (3 jul 2026) el pronóstico real empieza a aparecer
+  ~**17 jun 2026**. Si las fechas del viaje cambian, actualizar `TRIP.start/end` e
+  `iso` de cada día en `src/data/trip.js` (de ahí salen cuenta regresiva y clima).
 - ⚠️ **HEIC de iPhone**: si una foto no se ve, puede ser formato HEIC en un
   navegador que no lo decodifica (Chrome). El resize cae a subir el original.
   La mayoría de las subidas web de iOS ya son JPEG. Mejora posible: convertir HEIC.
@@ -182,11 +207,11 @@ sobre los tabs (`a[href="#/mapa"]`) en vez de setear `location.hash`.
 
 ## 10. Roadmap / ideas para próximas sesiones
 
+**Ya hecho (jun 2026):** ✅ Cuenta regresiva · ✅ Clima de los días · ✅ Sección Recuerdos.
+
 **Features nuevas posibles:**
 - 💸 Gastos del viaje (dividir entre los dos).
-- 🌦️ Clima / pronóstico de esos días.
 - 🧳 Checklist de valija (compartida).
-- ⏳ Cuenta regresiva al viaje.
 - 📝 Notas / diario por día.
 - 🔗 Links de reservas (depto, restos, teatro) por evento.
 - 📅 Exportar el itinerario (PDF / Google Calendar / .ics).

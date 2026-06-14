@@ -26,7 +26,9 @@ Repo: https://github.com/joacohmartinez-mkt/buenos-aires-trip
 
 ## D) Para cargar contenido SIN tocar código (desde la app en vivo)
 - Entrá al sitio → botón flotante **“Editar”** → PIN **`0103`**.
-- Agregás/editás/borrás eventos, subís fotos y calificás. Se guarda solo (Supabase).
+- Con el candado abierto: agregás/editás/borrás **eventos** y **recuerdos**.
+- **Sin** candado (abierto a los dos): subir **fotos**, **calificar** lugares y dar **like** a recuerdos.
+- Todo se guarda solo y se sincroniza entre los dos (Supabase).
 
 ## E) Desde CERO en otra compu
 1. `git clone https://github.com/joacohmartinez-mkt/buenos-aires-trip.git`
