@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Plus } from 'lucide-react'
 import HeroHeader from '../components/HeroHeader'
+import Countdown from '../components/Countdown'
+import WeatherStrip from '../components/WeatherStrip'
 import LodgingCard from '../components/LodgingCard'
 import Highlights from '../components/Highlights'
 import DayTabs from '../components/DayTabs'
@@ -29,6 +31,8 @@ export default function Itinerary() {
   return (
     <div>
       <HeroHeader />
+      <Countdown />
+      <WeatherStrip />
       <LodgingCard />
       <Highlights />
       <DayTabs days={DAYS} activeId={activeId} onSelect={setActiveId} />

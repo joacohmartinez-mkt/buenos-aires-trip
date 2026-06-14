@@ -60,6 +60,22 @@ alter table public.photos enable row level security;
 drop policy if exists "photos_all" on public.photos;
 create policy "photos_all" on public.photos for all using (true) with check (true);
 
+-- ---------- RECUERDOS (muro polaroid de la pareja) ----------
+create table if not exists public.memories (
+  id uuid primary key default gen_random_uuid(),
+  title       text not null,
+  note        text default '',
+  kind        text not null default 'momento',  -- momento | sueno | promesa | cancion | lugar
+  memory_date date not null default current_date,
+  author      text,                             -- 'Joaquín' | 'Nicole'
+  hearts      integer not null default 0,
+  path        text,                             -- ruta de la foto en Storage (opcional)
+  created_at  timestamptz default now()
+);
+alter table public.memories enable row level security;
+drop policy if exists "memories_all" on public.memories;
+create policy "memories_all" on public.memories for all using (true) with check (true);
+
 -- ---------- STORAGE (bucket público de fotos) ----------
 insert into storage.buckets (id, name, public) values ('fotos','fotos',true)
   on conflict (id) do nothing;

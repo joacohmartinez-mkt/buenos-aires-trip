@@ -44,16 +44,6 @@ export default function HeroHeader() {
         <p className="mt-1 text-lg font-semibold text-white/95 drop-shadow">
           {TRIP.couple} <span className="text-rose-300">❤️</span>
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {TRIP.chips.map((chip) => (
-            <span
-              key={chip}
-              className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white ring-1 ring-white/25 backdrop-blur-sm"
-            >
-              {chip}
-            </span>
-          ))}
-        </div>
       </div>
     </header>
   )

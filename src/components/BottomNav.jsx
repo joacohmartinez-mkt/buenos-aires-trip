@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { CalendarDays, MapPinned, Image } from 'lucide-react'
+import { CalendarDays, MapPinned, Image, Sparkles } from 'lucide-react'
 
 const tabs = [
   { to: '/', label: 'Itinerario', Icon: CalendarDays, end: true },
   { to: '/mapa', label: 'Mapa', Icon: MapPinned, end: false },
   { to: '/fotos', label: 'Fotos', Icon: Image, end: false },
+  { to: '/recuerdos', label: 'Recuerdos', Icon: Sparkles, end: false },
 ]
 
 export default function BottomNav() {

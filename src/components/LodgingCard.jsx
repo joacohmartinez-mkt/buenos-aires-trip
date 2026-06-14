@@ -4,7 +4,7 @@ import { TRIP } from '../data/trip'
 export default function LodgingCard() {
   const { address, checkin, checkout } = TRIP.lodging
   return (
-    <section className="relative z-10 -mt-6 px-4">
+    <section className="relative z-10 mt-4 px-4">
       <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-xl shadow-gray-900/5">
         <div className="flex items-start gap-2.5">
           <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">

@@ -40,7 +40,8 @@ export async function loadPhotos() {
 }
 
 // ---- Resize en el cliente (para que carguen rápido) ----
-async function resizeImage(file, maxSide = 1400, quality = 0.82) {
+// Exportado para reusarlo en otras capas (ej: lib/memories.js).
+export async function resizeImage(file, maxSide = 1400, quality = 0.82) {
   try {
     const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
     let { width, height } = bitmap
