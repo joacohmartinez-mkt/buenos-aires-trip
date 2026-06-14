@@ -28,6 +28,18 @@
   }
 }
 
+/* ----- Recuerdo expandido: página de cuaderno (papel rayado) ----- */
+.notebook-lines {
+  line-height: 30px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 29px,
+    rgba(96, 109, 188, 0.28) 29px,
+    rgba(96, 109, 188, 0.28) 30px
+  );
+}
+
 /* ----- Leaflet: ajustes finos sobre el CSS base ----- */
 .leaflet-container {
   font-family: 'Inter', sans-serif;

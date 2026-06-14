@@ -1,29 +1,42 @@
 import { useRef, useState } from 'react'
-import { X, ImagePlus, Camera } from 'lucide-react'
-import { addMemory, MEMORY_KINDS } from '../lib/memories'
+import { X, ImagePlus, Camera, RefreshCw, Trash2 } from 'lucide-react'
+import { addMemory, updateMemory, memoryPhotoUrl, MEMORY_KINDS } from '../lib/memories'
 import { AUTHORS } from '../lib/ratings'
 
 const today = () => new Date().toISOString().slice(0, 10)
 const LAST_AUTHOR = 'memoryAuthor'
 
-export default function MemoryForm({ onClose }) {
+export default function MemoryForm({ memory = null, onClose }) {
+  const editing = Boolean(memory)
   const fileRef = useRef(null)
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState('')
-  const [kind, setKind] = useState(MEMORY_KINDS[0].id)
-  const [title, setTitle] = useState('')
-  const [note, setNote] = useState('')
-  const [date, setDate] = useState(today())
-  const [author, setAuthor] = useState(() => localStorage.getItem(LAST_AUTHOR) || AUTHORS[0])
+  const [removePhoto, setRemovePhoto] = useState(false)
+  const [kind, setKind] = useState(memory?.kind || MEMORY_KINDS[0].id)
+  const [title, setTitle] = useState(memory?.title || '')
+  const [note, setNote] = useState(memory?.note || '')
+  const [date, setDate] = useState(memory?.memory_date || today())
+  const [author, setAuthor] = useState(memory?.author || localStorage.getItem(LAST_AUTHOR) || AUTHORS[0])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  // Foto que se muestra: la nueva elegida, o la existente (si no se quitó).
+  const existingUrl = editing && memory.path && !removePhoto ? memoryPhotoUrl(memory.path) : ''
+  const shownPhoto = preview || existingUrl
 
   function pickFile(e) {
     const f = e.target.files?.[0]
     if (!f) return
     setFile(f)
     setPreview(URL.createObjectURL(f))
+    setRemovePhoto(false)
     setError('')
+  }
+
+  function clearPhoto() {
+    setFile(null)
+    setPreview('')
+    setRemovePhoto(true)
   }
 
   async function handleSave() {
@@ -35,7 +48,11 @@ export default function MemoryForm({ onClose }) {
     setError('')
     try {
       localStorage.setItem(LAST_AUTHOR, author)
-      await addMemory({ title, note, kind, date, author, file })
+      if (editing) {
+        await updateMemory(memory, { title, note, kind, date, author, file, removePhoto })
+      } else {
+        await addMemory({ title, note, kind, date, author, file })
+      }
       onClose()
     } catch (e) {
       console.error(e)
@@ -56,7 +73,7 @@ export default function MemoryForm({ onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-          <h3 className="text-lg font-bold text-gray-900">Nuevo recuerdo</h3>
+          <h3 className="text-lg font-bold text-gray-900">{editing ? 'Editar recuerdo' : 'Nuevo recuerdo'}</h3>
           <button onClick={onClose} className="rounded-full p-1 text-gray-400 hover:bg-gray-100">
             <X size={20} />
           </button>
@@ -65,10 +82,26 @@ export default function MemoryForm({ onClose }) {
         <div className="overflow-y-auto px-5 pb-5">
           {/* Foto (opcional) */}
           <input ref={fileRef} type="file" accept="image/*" onChange={pickFile} className="hidden" />
-          {preview ? (
-            <button onClick={() => fileRef.current?.click()} className="mt-4 block w-full overflow-hidden rounded-2xl">
-              <img src={preview} alt="preview" className="max-h-72 w-full object-cover" />
-            </button>
+          {shownPhoto ? (
+            <div className="mt-4">
+              <div className="overflow-hidden rounded-2xl">
+                <img src={shownPhoto} alt="preview" className="max-h-72 w-full object-cover" />
+              </div>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-200"
+                >
+                  <RefreshCw size={14} /> Cambiar foto
+                </button>
+                <button
+                  onClick={clearPhoto}
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-100"
+                >
+                  <Trash2 size={14} /> Quitar
+                </button>
+              </div>
+            </div>
           ) : (
             <button
               onClick={() => fileRef.current?.click()}
@@ -114,7 +147,7 @@ export default function MemoryForm({ onClose }) {
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            rows={2}
+            rows={3}
             placeholder="Contá un poco más…"
             className="mt-1.5 w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none"
           />
@@ -151,7 +184,7 @@ export default function MemoryForm({ onClose }) {
             disabled={busy}
             className="mt-5 w-full rounded-xl bg-gray-900 py-3 text-sm font-bold text-white hover:bg-gray-800 disabled:bg-gray-300"
           >
-            {busy ? 'Guardando…' : 'Guardar recuerdo'}
+            {busy ? 'Guardando…' : editing ? 'Guardar cambios' : 'Guardar recuerdo'}
           </button>
         </div>
       </div>

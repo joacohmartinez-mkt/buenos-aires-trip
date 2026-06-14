@@ -89,6 +89,31 @@ export async function addMemory({ title, note = '', kind = 'momento', date, auth
   await loadMemories()
 }
 
+export async function updateMemory(memory, { title, note = '', kind, date, author, file = null, removePhoto = false }) {
+  if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
+  let path = memory.path
+  if (file) {
+    // Subir la nueva y borrar la anterior (si había).
+    const blob = await resizeImage(file)
+    const newPath = `mem-${crypto.randomUUID()}.jpg`
+    const { error: upErr } = await supabase.storage
+      .from(BUCKET)
+      .upload(newPath, blob, { contentType: 'image/jpeg', upsert: false })
+    if (upErr) throw upErr
+    if (memory.path) await supabase.storage.from(BUCKET).remove([memory.path])
+    path = newPath
+  } else if (removePhoto && memory.path) {
+    await supabase.storage.from(BUCKET).remove([memory.path])
+    path = null
+  }
+  const { error } = await supabase
+    .from('memories')
+    .update({ title: title.trim(), note: note.trim(), kind, memory_date: date, author, path })
+    .eq('id', memory.id)
+  if (error) throw error
+  await loadMemories()
+}
+
 export async function deleteMemory(memory) {
   if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
   if (memory.path) await supabase.storage.from(BUCKET).remove([memory.path])

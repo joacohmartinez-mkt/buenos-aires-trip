@@ -13,12 +13,16 @@ function dailyIndex(len) {
 
 export default function Recuerdos() {
   const [, setV] = useState(0)
-  const [adding, setAdding] = useState(false)
+  // null = cerrado · { memory: null } = nuevo · { memory } = editando
+  const [form, setForm] = useState(null)
 
   useEffect(() => {
     loadMemories()
     return onMemoriesChange(() => setV((v) => v + 1))
   }, [])
+
+  const openNew = () => setForm({ memory: null })
+  const openEdit = (m) => setForm({ memory: m })
 
   const memories = getMemories()
   const featured = memories.length >= 3 ? memories[dailyIndex(memories.length)] : null
@@ -38,7 +42,7 @@ export default function Recuerdos() {
       {/* Botón agregar */}
       <div className="px-4">
         <button
-          onClick={() => setAdding(true)}
+          onClick={openNew}
           className="-mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gray-900 py-3 text-sm font-bold text-white shadow-lg hover:bg-gray-800"
         >
           <Plus size={18} /> Agregar recuerdo
@@ -48,22 +52,22 @@ export default function Recuerdos() {
       {/* Recuerdo del día */}
       {featured && (
         <div className="mt-7 px-6">
-          <MemoryCard memory={featured} featured rotate={-1.5} />
+          <MemoryCard memory={featured} featured defaultOpen onEdit={openEdit} />
         </div>
       )}
 
       {/* Muro */}
       {memories.length === 0 ? (
-        <EmptyState onAdd={() => setAdding(true)} />
+        <EmptyState onAdd={openNew} />
       ) : (
         <div className="mt-8 space-y-8 px-6">
           {memories.map((m, i) => (
-            <MemoryCard key={m.id} memory={m} rotate={i % 2 === 0 ? 1.2 : -1.2} />
+            <MemoryCard key={m.id} memory={m} rotate={i % 2 === 0 ? 1.2 : -1.2} onEdit={openEdit} />
           ))}
         </div>
       )}
 
-      {adding && <MemoryForm onClose={() => setAdding(false)} />}
+      {form && <MemoryForm memory={form.memory} onClose={() => setForm(null)} />}
     </div>
   )
 }
