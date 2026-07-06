@@ -71,6 +71,23 @@ export default function LocationSearch({ value, onChange }) {
   const [flyTarget, setFlyTarget] = useState(null)
   const debounceRef = useRef(null)
   const abortRef = useRef(null)
+  const searchBoxRef = useRef(null)
+
+  // Cerrar el dropdown si se toca fuera del buscador.
+  useEffect(() => {
+    if (!showList) return
+    function handler(e) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target)) {
+        setShowList(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
+  }, [showList])
 
   const events = useMemo(() => getMapEvents(), [])
   const selectedEvent = value?.eventId ? events.find((e) => e.id === value.eventId) : null
@@ -151,7 +168,7 @@ export default function LocationSearch({ value, onChange }) {
   return (
     <div>
       {/* Buscador */}
-      <div className="relative">
+      <div ref={searchBoxRef} className="relative">
         <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 focus-within:border-gray-400 focus-within:bg-white">
           <Search size={16} className="shrink-0 text-gray-400" />
           <input
@@ -172,9 +189,9 @@ export default function LocationSearch({ value, onChange }) {
           )}
         </div>
 
-        {/* Dropdown de sugerencias */}
+        {/* Dropdown de sugerencias. z-index alto para tapar Leaflet (usa 400-1000). */}
         {showList && (suggestions.length > 0 || (q.length >= 2 && !searching)) && (
-          <div className="absolute inset-x-0 top-full z-30 mt-1 max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
+          <div className="absolute inset-x-0 top-full z-[1200] mt-1 max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-2xl">
             {suggestions.length > 0 ? (
               suggestions.map((item) => (
                 <button
@@ -196,8 +213,8 @@ export default function LocationSearch({ value, onChange }) {
         )}
       </div>
 
-      {/* Atajos: actividades del viaje */}
-      {events.length > 0 && (
+      {/* Atajos: actividades del viaje. Se oculta cuando hay dropdown abierto para no tapar. */}
+      {events.length > 0 && !(showList && suggestions.length > 0) && (
         <div className="mt-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           <Sparkles size={12} className="shrink-0 text-amber-500" />
           <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-gray-500">De tu viaje:</span>
