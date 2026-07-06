@@ -128,7 +128,7 @@ export default function MapRatings() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/10" />
         <div className="absolute inset-x-0 bottom-0 px-4 pb-4">
-          <h1 className="text-2xl font-bold text-white drop-shadow-md">Mapa & Ratings</h1>
+          <h1 className="font-display text-3xl font-bold text-white drop-shadow-md">Mapa & Ratings</h1>
           <p className="text-sm font-medium text-white/90 drop-shadow">
             {filtered.length} {filtered.length === 1 ? 'lugar' : 'lugares'} para descubrir y calificar
           </p>

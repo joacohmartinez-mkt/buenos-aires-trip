@@ -38,7 +38,7 @@ function Footer() {
 
 export default function App() {
   return (
-    <div className="relative mx-auto min-h-screen max-w-app bg-gray-50 shadow-xl shadow-gray-300/40">
+    <div className="relative mx-auto min-h-screen max-w-app bg-amber-50/60 shadow-xl shadow-amber-900/10">
       <ScrollToTop />
       <main className="pb-24">
         <Suspense fallback={<RouteFallback />}>

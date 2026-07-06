@@ -215,7 +215,7 @@ export default function Photos() {
                 </div>
               ) : (
                 <>
-                  <h1 className="min-w-0 flex-1 truncate text-2xl font-bold drop-shadow-sm">
+                  <h1 className="min-w-0 flex-1 truncate font-display text-3xl font-bold drop-shadow-sm">
                     📁 {currentAlbumName}
                   </h1>
                   {isNamedAlbum && (
@@ -261,7 +261,7 @@ export default function Photos() {
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-bold drop-shadow-sm">Nuestros recuerdos 📸</h1>
+            <h1 className="font-display text-3xl font-bold drop-shadow-sm">Nuestros recuerdos 📸</h1>
             <p className="text-sm font-medium text-white/90">
               {!loaded
                 ? 'Cargando recuerdos…'
