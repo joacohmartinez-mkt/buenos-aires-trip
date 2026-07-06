@@ -135,8 +135,8 @@ export default function MapRatings() {
         </div>
       </div>
 
-      {/* Filtros sticky */}
-      <div className="sticky top-0 z-20 border-b border-gray-200 bg-gray-50/95 px-4 py-3 backdrop-blur-md">
+      {/* Filtros sticky con separación clara del mapa */}
+      <div className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] backdrop-blur-md">
         <div className="no-scrollbar flex gap-2 overflow-x-auto">
           {DAY_FILTERS.map((f) => {
             const active = filterDay === f.day

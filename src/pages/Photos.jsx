@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ImagePlus,
   ChevronLeft,
@@ -33,7 +33,8 @@ const ALL = '__all__'
 const NONE = '__none__'
 
 export default function Photos() {
-  const [, setV] = useState(0)
+  const [version, setVersion] = useState(0)
+  const [loaded, setLoaded] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [lightbox, setLightbox] = useState(null)
   const [view, setView] = useState(ALL)
@@ -47,8 +48,8 @@ export default function Photos() {
   const longPressRef = useRef(null)
 
   useEffect(() => {
-    loadPhotos()
-    return onPhotosChange(() => setV((v) => v + 1))
+    loadPhotos().finally(() => setLoaded(true))
+    return onPhotosChange(() => setVersion((v) => v + 1))
   }, [])
 
   // Al salir del modo seleccionar, limpiar selección.
@@ -62,14 +63,20 @@ export default function Photos() {
     setAlbumMenu(false)
   }, [view])
 
-  const albums = getAlbums()
-  const visiblePhotos =
-    view === ALL ? getPhotos() : view === NONE ? getPhotosByAlbum(null) : getPhotosByAlbum(view)
+  // Memo con dep en `version` — se recomputa sólo cuando la caché cambia.
+  const albums = useMemo(() => getAlbums(), [version])
+  const totalCount = useMemo(() => getPhotos().length, [version])
+  const visiblePhotos = useMemo(() => {
+    if (view === ALL) return getPhotos()
+    if (view === NONE) return getPhotosByAlbum(null)
+    return getPhotosByAlbum(view)
+  }, [view, version])
 
   const isFilteredView = view !== ALL
   const currentAlbumName = view === NONE ? 'Sin álbum' : view === ALL ? null : view
   const isNamedAlbum = view !== ALL && view !== NONE
   const hasAnyAlbums = albums.some((a) => a.name !== null)
+  const showSkeleton = !loaded && totalCount === 0
 
   function togglePhoto(id) {
     setSelected((prev) => {
@@ -241,9 +248,11 @@ export default function Photos() {
           <>
             <h1 className="text-2xl font-bold drop-shadow-sm">Nuestros recuerdos 📸</h1>
             <p className="text-sm font-medium text-white/90">
-              {getPhotos().length === 0
+              {!loaded
+                ? 'Cargando recuerdos…'
+                : totalCount === 0
                 ? 'Todavía no hay nada del viaje'
-                : `${getPhotos().length} ${getPhotos().length === 1 ? 'recuerdo' : 'recuerdos'} guardados`}
+                : `${totalCount} ${totalCount === 1 ? 'recuerdo' : 'recuerdos'} guardados`}
             </p>
           </>
         )}
@@ -347,7 +356,17 @@ export default function Photos() {
       )}
 
       {/* Grid */}
-      {visiblePhotos.length === 0 ? (
+      {showSkeleton ? (
+        <div className="mt-4 grid grid-cols-3 gap-1.5 px-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="aspect-square animate-pulse rounded-xl bg-gray-200"
+              style={{ animationDelay: `${(i % 3) * 90}ms` }}
+            />
+          ))}
+        </div>
+      ) : visiblePhotos.length === 0 ? (
         <div className="mt-5 px-4">
           <p className="mb-3 text-center text-sm font-medium text-gray-400">
             Subí el primer recuerdo <span className="text-rose-400">❤️</span>
