@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import { Star, Plus } from 'lucide-react'
+import { Star, Plus, ImagePlus } from 'lucide-react'
 import { DAY_FILTERS } from '../data/trip'
 import { typeStyle } from '../lib/styles'
 import { getAverage, onRatingsChange, loadRatings } from '../lib/ratings'
@@ -17,6 +17,7 @@ import {
 import Stars from '../components/Stars'
 import RatingModal from '../components/RatingModal'
 import Lightbox from '../components/Lightbox'
+import PhotoUpload from '../components/PhotoUpload'
 
 const dayMeta = Object.fromEntries(DAY_FILTERS.map((f) => [f.day, f]))
 
@@ -75,6 +76,7 @@ export default function MapRatings() {
   const [selected, setSelected] = useState(null)
   const [modalSpot, setModalSpot] = useState(null)
   const [lightbox, setLightbox] = useState(null) // { kind: 'event'|'single', eventId?, id? }
+  const [uploadForEvent, setUploadForEvent] = useState(null)
   const [version, setVersion] = useState(0)
 
   // Cargar eventos + calificaciones + fotos al montar y refrescar al cambiar.
@@ -204,12 +206,20 @@ export default function MapRatings() {
                         📷 Ver {pc} {pc === 1 ? 'foto' : 'fotos'}
                       </button>
                     )}
-                    <button
-                      onClick={() => setModalSpot(spot)}
-                      className="mt-2 w-full rounded-lg bg-gray-900 py-1.5 text-xs font-bold text-white hover:bg-gray-800"
-                    >
-                      ★ Calificar
-                    </button>
+                    <div className="mt-2 flex gap-1.5">
+                      <button
+                        onClick={() => setUploadForEvent(spot.id)}
+                        className="flex-1 rounded-lg bg-rose-100 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-200"
+                      >
+                        📸 Subir
+                      </button>
+                      <button
+                        onClick={() => setModalSpot(spot)}
+                        className="flex-1 rounded-lg bg-gray-900 py-1.5 text-xs font-bold text-white hover:bg-gray-800"
+                      >
+                        ★ Calificar
+                      </button>
+                    </div>
                   </div>
                 </Popup>
               </Marker>
@@ -275,16 +285,29 @@ export default function MapRatings() {
                   )}
                 </div>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setModalSpot(spot)
-                }}
-                className="flex shrink-0 items-center gap-1 rounded-full bg-gray-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-800"
-              >
-                <Plus size={14} />
-                Reseña
-              </button>
+              <div className="flex shrink-0 flex-col gap-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setUploadForEvent(spot.id)
+                  }}
+                  className="flex items-center gap-1 rounded-full bg-rose-100 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-200"
+                  aria-label="Subir foto o video"
+                >
+                  <ImagePlus size={14} />
+                  Subir
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setModalSpot(spot)
+                  }}
+                  className="flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-800"
+                >
+                  <Plus size={14} />
+                  Reseña
+                </button>
+              </div>
             </li>
           )
         })}
@@ -292,6 +315,9 @@ export default function MapRatings() {
 
       {modalSpot && <RatingModal spot={modalSpot} onClose={() => setModalSpot(null)} />}
       {lightbox && <Lightbox source={lightbox} onClose={() => setLightbox(null)} />}
+      {uploadForEvent && (
+        <PhotoUpload defaultEventId={uploadForEvent} onClose={() => setUploadForEvent(null)} />
+      )}
     </div>
   )
 }

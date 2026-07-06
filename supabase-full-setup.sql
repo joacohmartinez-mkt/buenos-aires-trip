@@ -11,11 +11,16 @@ create table if not exists public.spot_ratings (
   id uuid primary key default gen_random_uuid(),
   spot_id   text not null,          -- = events.id (uuid) del lugar calificado
   spot_name text not null,
-  rating    smallint not null check (rating between 1 and 5),
+  rating    numeric(2,1) not null,  -- 0.5 - 5.0, en pasos de 0.5 (media estrella)
   comment   text default '',
   author    text not null,          -- 'Joaquín' | 'Nicole'
   unique (spot_id, author)
 );
+-- Migración desde bases previas (rating smallint 1-5) → numeric con medias.
+alter table public.spot_ratings alter column rating type numeric(2,1) using rating::numeric(2,1);
+alter table public.spot_ratings drop constraint if exists spot_ratings_rating_check;
+alter table public.spot_ratings add constraint spot_ratings_rating_check
+  check (rating >= 0.5 and rating <= 5 and (rating * 2)::int = rating * 2);
 alter table public.spot_ratings enable row level security;
 drop policy if exists "lectura publica" on public.spot_ratings;
 drop policy if exists "alta publica"    on public.spot_ratings;

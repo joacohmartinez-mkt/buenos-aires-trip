@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { Star, X, ImagePlus, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Star, X, ImagePlus, Trash2, Play } from 'lucide-react'
 import { AUTHORS, getRatingBy, saveRating, deleteRating } from '../lib/ratings'
-import { getPhotosByEvent, photoUrl, uploadPhoto, loadPhotos, onPhotosChange, isVideo } from '../lib/photos'
-import { Play } from 'lucide-react'
+import { getPhotosByEvent, photoUrl, loadPhotos, onPhotosChange, isVideo } from '../lib/photos'
 import { typeStyle } from '../lib/styles'
 import Lightbox from './Lightbox'
+import PhotoUpload from './PhotoUpload'
 
 export default function RatingModal({ spot, onClose }) {
   const [author, setAuthor] = useState(AUTHORS[0])
@@ -12,10 +12,9 @@ export default function RatingModal({ spot, onClose }) {
   const [hover, setHover] = useState(0)
   const [comment, setComment] = useState('')
   const [saving, setSaving] = useState(false)
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [addingPhotos, setAddingPhotos] = useState(false)
   const [, setPv] = useState(0)
   const [lb, setLb] = useState(null)
-  const fileRef = useRef(null)
 
   // Al abrir o cambiar de autor, precargar la calificación existente.
   useEffect(() => {
@@ -55,19 +54,6 @@ export default function RatingModal({ spot, onClose }) {
     } catch {
       setSaving(false)
     }
-  }
-
-  async function addPhoto(e) {
-    const f = e.target.files?.[0]
-    if (!f) return
-    setUploadingPhoto(true)
-    try {
-      await uploadPhoto(f, { eventId: spot.id })
-    } catch (err) {
-      console.error(err)
-    }
-    setUploadingPhoto(false)
-    e.target.value = ''
   }
 
   const label = 'mt-5 text-xs font-semibold uppercase tracking-wide text-gray-400'
@@ -111,22 +97,48 @@ export default function RatingModal({ spot, onClose }) {
             ))}
           </div>
 
-          {/* Estrellas */}
-          <p className={label}>Tu puntaje</p>
-          <div className="mt-2 flex justify-center gap-1.5">
+          {/* Estrellas con medias (0.5) */}
+          <p className={label}>
+            Tu puntaje
+            {(hover || rating) > 0 && (
+              <span className="ml-2 font-bold text-amber-500 normal-case">
+                {(hover || rating).toFixed(1)} / 5
+              </span>
+            )}
+          </p>
+          <div
+            className="mt-2 flex justify-center gap-1.5"
+            onMouseLeave={() => setHover(0)}
+          >
             {[1, 2, 3, 4, 5].map((i) => {
-              const filled = i <= (hover || rating)
+              const shown = hover || rating
+              const fill = Math.max(0, Math.min(1, shown - (i - 1)))
               return (
-                <button
-                  key={i}
-                  onClick={() => setRating(i)}
-                  onMouseEnter={() => setHover(i)}
-                  onMouseLeave={() => setHover(0)}
-                  className="p-1 transition-transform hover:scale-110"
-                  aria-label={`${i} estrellas`}
-                >
-                  <Star size={36} className={filled ? 'text-amber-400 fill-amber-400' : 'text-gray-300'} strokeWidth={2} />
-                </button>
+                <div key={i} className="relative">
+                  {/* Estrella visual: gris + amarilla recortada según fill */}
+                  <div className="p-1 transition-transform">
+                    <div className="relative" style={{ width: 36, height: 36 }}>
+                      <Star size={36} className="absolute inset-0 text-gray-300" strokeWidth={2} />
+                      <div className="absolute inset-0 overflow-hidden" style={{ width: `${fill * 100}%` }}>
+                        <Star size={36} className="text-amber-400 fill-amber-400" strokeWidth={2} />
+                      </div>
+                    </div>
+                  </div>
+                  {/* Hitbox mitad izquierda: valor i - 0.5 */}
+                  <button
+                    onClick={() => setRating(i - 0.5)}
+                    onMouseEnter={() => setHover(i - 0.5)}
+                    className="absolute inset-y-0 left-0 w-1/2 cursor-pointer"
+                    aria-label={`${i - 0.5} estrellas`}
+                  />
+                  {/* Hitbox mitad derecha: valor i */}
+                  <button
+                    onClick={() => setRating(i)}
+                    onMouseEnter={() => setHover(i)}
+                    className="absolute inset-y-0 right-0 w-1/2 cursor-pointer"
+                    aria-label={`${i} estrellas`}
+                  />
+                </div>
               )
             })}
           </div>
@@ -144,8 +156,9 @@ export default function RatingModal({ spot, onClose }) {
           />
 
           {/* Fotos del lugar */}
-          <p className={label}>Fotos del lugar</p>
-          <input ref={fileRef} type="file" accept="image/*,video/*" onChange={addPhoto} className="hidden" />
+          <p className={label}>
+            Fotos y videos <span className="font-normal lowercase text-gray-300">del lugar</span>
+          </p>
           <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto">
             {photos.map((p, i) => (
               <button
@@ -172,20 +185,16 @@ export default function RatingModal({ spot, onClose }) {
               </button>
             ))}
             <button
-              onClick={() => fileRef.current?.click()}
-              disabled={uploadingPhoto}
-              className="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600 disabled:opacity-50"
+              onClick={() => setAddingPhotos(true)}
+              className="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600"
             >
-              {uploadingPhoto ? (
-                <span className="text-[9px] font-semibold">Subiendo…</span>
-              ) : (
-                <>
-                  <ImagePlus size={16} />
-                  <span className="text-[9px] font-semibold">Foto</span>
-                </>
-              )}
+              <ImagePlus size={16} />
+              <span className="text-[9px] font-semibold">Agregar</span>
             </button>
           </div>
+          <p className="mt-1.5 text-[10px] text-gray-400">
+            Podés subir varias fotos o videos de una — ya vienen atadas a este lugar.
+          </p>
 
           {/* Guardar / borrar calificación */}
           <div className="mt-5 flex gap-2">
@@ -216,6 +225,10 @@ export default function RatingModal({ spot, onClose }) {
           initialIndex={lb}
           onClose={() => setLb(null)}
         />
+      )}
+
+      {addingPhotos && (
+        <PhotoUpload defaultEventId={spot.id} onClose={() => setAddingPhotos(false)} />
       )}
     </>
   )
