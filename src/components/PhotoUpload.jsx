@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { uploadPhotos, getAlbums, onPhotosChange } from '../lib/photos'
 import LocationSearch from './LocationSearch'
+import useLockBodyScroll from '../lib/useLockBodyScroll'
 
 const STEPS = [
   { key: 'files', label: 'Elegir' },
@@ -22,6 +23,7 @@ const STEPS = [
 ]
 
 export default function PhotoUpload({ defaultEventId = null, defaultAlbum = null, onClose }) {
+  useLockBodyScroll(true)
   const fileRef = useRef(null)
   const addMoreRef = useRef(null)
 

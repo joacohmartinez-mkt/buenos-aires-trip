@@ -10,6 +10,7 @@ import {
   minutesToDisplay,
 } from '../lib/events'
 import LocationPicker from './LocationPicker'
+import { confirmDialog } from '../lib/dialog'
 
 const TYPES = Object.entries(TYPE_STYLES)
 
@@ -63,7 +64,13 @@ export default function EventForm({ event, defaultDay = 1, onClose }) {
   }
 
   async function handleDelete() {
-    if (!window.confirm(`¿Borrar "${event.title}"? No se puede deshacer.`)) return
+    const ok = await confirmDialog({
+      title: `¿Borrar "${event.title}"?`,
+      message: 'También se borran sus calificaciones y fotos. No se puede deshacer.',
+      confirmLabel: 'Borrar',
+      danger: true,
+    })
+    if (!ok) return
     setSaving(true)
     try {
       await deleteEvent(event.id)

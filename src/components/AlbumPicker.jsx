@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { X, Folder, FolderPlus, Check, Ban } from 'lucide-react'
 import { getAlbums } from '../lib/photos'
+import useLockBodyScroll from '../lib/useLockBodyScroll'
 
 // Bottom sheet para elegir un álbum destino (o quitar de álbum).
 // Reutilizable desde: modo seleccionar en Photos, Lightbox, futuro.
@@ -16,6 +17,7 @@ export default function AlbumPicker({
   onPick,
   onClose,
 }) {
+  useLockBodyScroll(true)
   const [newName, setNewName] = useState('')
 
   const albums = useMemo(() => getAlbums().filter((a) => a.name !== null), [])

@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import BottomNav from './components/BottomNav'
 import EditFab from './components/EditFab'
+import ConfirmHost from './components/ConfirmHost'
 import Itinerary from './pages/Itinerary'
 
 // La landing (Itinerary) va en el bundle inicial — es la ruta más visitada.
@@ -52,6 +53,7 @@ export default function App() {
       </main>
       <EditFab />
       <BottomNav />
+      <ConfirmHost />
     </div>
   )
 }

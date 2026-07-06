@@ -29,6 +29,7 @@ import {
 import PhotoUpload from '../components/PhotoUpload'
 import Lightbox from '../components/Lightbox'
 import AlbumPicker from '../components/AlbumPicker'
+import { confirmDialog, alertDialog } from '../lib/dialog'
 
 const ALL = '__all__'
 const NONE = '__none__'
@@ -107,14 +108,21 @@ export default function Photos() {
       setMovingSelection(false)
     } catch (e) {
       console.error(e)
-      window.alert('No se pudo mover.')
+      alertDialog('No se pudo mover', 'Revisá la conexión y probá de nuevo.')
     } finally {
       setBusy(false)
     }
   }
 
   async function handleDeleteSelection() {
-    if (!window.confirm(`¿Borrar ${selected.size} recuerdo${selected.size !== 1 ? 's' : ''}? No se puede deshacer.`)) return
+    const n = selected.size
+    const ok = await confirmDialog({
+      title: `¿Borrar ${n} recuerdo${n !== 1 ? 's' : ''}?`,
+      message: 'No se puede deshacer.',
+      confirmLabel: 'Borrar',
+      danger: true,
+    })
+    if (!ok) return
     setBusy(true)
     try {
       const list = getPhotos().filter((p) => selected.has(p.id))
@@ -122,7 +130,7 @@ export default function Photos() {
       setSelectMode(false)
     } catch (e) {
       console.error(e)
-      window.alert('No se pudo borrar.')
+      alertDialog('No se pudo borrar', 'Revisá la conexión y probá de nuevo.')
     } finally {
       setBusy(false)
     }
@@ -141,7 +149,7 @@ export default function Photos() {
       setRenaming(false)
     } catch (e) {
       console.error(e)
-      window.alert('No se pudo renombrar.')
+      alertDialog('No se pudo renombrar', 'Revisá la conexión y probá de nuevo.')
     } finally {
       setBusy(false)
     }
@@ -149,14 +157,20 @@ export default function Photos() {
 
   async function handleEmptyAlbum() {
     if (!isNamedAlbum) return
-    if (!window.confirm(`¿Vaciar el álbum "${view}"? Las fotos van a quedar en "Sin álbum".`)) return
+    const ok = await confirmDialog({
+      title: `¿Vaciar el álbum "${view}"?`,
+      message: 'Las fotos no se borran: quedan en "Sin álbum".',
+      confirmLabel: 'Vaciar',
+      danger: true,
+    })
+    if (!ok) return
     setBusy(true)
     try {
       await emptyAlbum(view)
       setView(ALL)
     } catch (e) {
       console.error(e)
-      window.alert('No se pudo vaciar.')
+      alertDialog('No se pudo vaciar', 'Revisá la conexión y probá de nuevo.')
     } finally {
       setBusy(false)
     }

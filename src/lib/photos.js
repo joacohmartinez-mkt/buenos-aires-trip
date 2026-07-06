@@ -247,13 +247,35 @@ export async function uploadPhotos(files, meta = {}, onProgress) {
   return { done, total: list.length, errors }
 }
 
+// ---- Mutaciones optimistas ----
+// Patrón: mutar la caché local primero (la UI responde al instante), después
+// sincronizar con Supabase; si falla, restaurar el snapshot y re-lanzar.
+async function optimistic(mutate, sync) {
+  const snapshot = cache
+  cache = mutate(cache)
+  notify()
+  try {
+    await sync()
+  } catch (e) {
+    cache = snapshot
+    notify()
+    throw e
+  }
+  // Refresco en segundo plano para converger con el server (sin bloquear la UI).
+  loadPhotos()
+}
+
 export async function deletePhoto(photo) {
   if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
-  const paths = [photo.path, photo.thumb_path].filter(Boolean)
-  await supabase.storage.from(BUCKET).remove(paths)
-  const { error } = await supabase.from('photos').delete().eq('id', photo.id)
-  if (error) throw error
-  await loadPhotos()
+  await optimistic(
+    (list) => list.filter((p) => p.id !== photo.id),
+    async () => {
+      const { error } = await supabase.from('photos').delete().eq('id', photo.id)
+      if (error) throw error
+      const paths = [photo.path, photo.thumb_path].filter(Boolean)
+      supabase.storage.from(BUCKET).remove(paths)
+    }
+  )
 }
 
 // Mueve N fotos a un álbum (null = "Sin álbum").
@@ -261,9 +283,14 @@ export async function movePhotosToAlbum(photoIds, albumName) {
   if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
   if (!photoIds || photoIds.length === 0) return
   const clean = albumName && albumName.trim() ? albumName.trim() : null
-  const { error } = await supabase.from('photos').update({ album: clean }).in('id', photoIds)
-  if (error) throw error
-  await loadPhotos()
+  const ids = new Set(photoIds)
+  await optimistic(
+    (list) => list.map((p) => (ids.has(p.id) ? { ...p, album: clean } : p)),
+    async () => {
+      const { error } = await supabase.from('photos').update({ album: clean }).in('id', photoIds)
+      if (error) throw error
+    }
+  )
 }
 
 // Renombra un álbum en todas las fotos que lo tengan.
@@ -272,9 +299,13 @@ export async function renameAlbum(oldName, newName) {
   const from = (oldName || '').trim()
   const to = (newName || '').trim()
   if (!from || !to || from === to) return
-  const { error } = await supabase.from('photos').update({ album: to }).eq('album', from)
-  if (error) throw error
-  await loadPhotos()
+  await optimistic(
+    (list) => list.map((p) => (p.album === from ? { ...p, album: to } : p)),
+    async () => {
+      const { error } = await supabase.from('photos').update({ album: to }).eq('album', from)
+      if (error) throw error
+    }
+  )
 }
 
 // Saca el álbum de todas las fotos (las deja en "Sin álbum") — no borra archivos.
@@ -282,21 +313,29 @@ export async function emptyAlbum(name) {
   if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
   const from = (name || '').trim()
   if (!from) return
-  const { error } = await supabase.from('photos').update({ album: null }).eq('album', from)
-  if (error) throw error
-  await loadPhotos()
+  await optimistic(
+    (list) => list.map((p) => (p.album === from ? { ...p, album: null } : p)),
+    async () => {
+      const { error } = await supabase.from('photos').update({ album: null }).eq('album', from)
+      if (error) throw error
+    }
+  )
 }
 
-// Borra en batch (usa el mismo loop que deletePhoto pero optimizado).
+// Borra en batch.
 export async function deletePhotos(photos) {
   if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
   if (!photos || photos.length === 0) return
-  const paths = photos.flatMap((p) => [p.path, p.thumb_path]).filter(Boolean)
-  const ids = photos.map((p) => p.id)
-  if (paths.length) await supabase.storage.from(BUCKET).remove(paths)
-  const { error } = await supabase.from('photos').delete().in('id', ids)
-  if (error) throw error
-  await loadPhotos()
+  const ids = new Set(photos.map((p) => p.id))
+  await optimistic(
+    (list) => list.filter((p) => !ids.has(p.id)),
+    async () => {
+      const { error } = await supabase.from('photos').delete().in('id', [...ids])
+      if (error) throw error
+      const paths = photos.flatMap((p) => [p.path, p.thumb_path]).filter(Boolean)
+      if (paths.length) supabase.storage.from(BUCKET).remove(paths)
+    }
+  )
 }
 
 export function onPhotosChange(cb) {

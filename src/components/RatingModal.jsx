@@ -5,8 +5,11 @@ import { getPhotosByEvent, photoUrl, thumbUrl, loadPhotos, onPhotosChange, isVid
 import { typeStyle } from '../lib/styles'
 import Lightbox from './Lightbox'
 import PhotoUpload from './PhotoUpload'
+import { confirmDialog } from '../lib/dialog'
+import useLockBodyScroll from '../lib/useLockBodyScroll'
 
 export default function RatingModal({ spot, onClose }) {
+  useLockBodyScroll(true)
   const [author, setAuthor] = useState(AUTHORS[0])
   const [rating, setRating] = useState(0)
   const [hover, setHover] = useState(0)
@@ -46,7 +49,12 @@ export default function RatingModal({ spot, onClose }) {
   }
 
   async function handleDeleteRating() {
-    if (!window.confirm(`¿Borrar la calificación de ${author}?`)) return
+    const ok = await confirmDialog({
+      title: `¿Borrar la calificación de ${author}?`,
+      confirmLabel: 'Borrar',
+      danger: true,
+    })
+    if (!ok) return
     setSaving(true)
     try {
       await deleteRating(spot.id, author)

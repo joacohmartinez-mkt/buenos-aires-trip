@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Heart, Trash2, ChevronDown, Pencil } from 'lucide-react'
 import { kindById, kindTone, memoryPhotoUrl, deleteMemory } from '../lib/memories'
+import { confirmDialog } from '../lib/dialog'
 
 // Fecha 'YYYY-MM-DD' → '14 jun 2026'
 function formatDate(iso) {
@@ -25,8 +26,13 @@ export default function MemoryCard({ memory, rotate = 0, featured = false, defau
 
   async function handleDelete(e) {
     e.stopPropagation()
-    if (!window.confirm('¿Borrar este recuerdo?')) return
-    if (!window.confirm('¿Estás muy seguro? Esta acción no se puede deshacer.')) return
+    const ok = await confirmDialog({
+      title: '¿Borrar este recuerdo?',
+      message: 'Se pierde la notita y su foto. No se puede deshacer.',
+      confirmLabel: 'Borrar',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteMemory(memory)
     } catch (err) {
