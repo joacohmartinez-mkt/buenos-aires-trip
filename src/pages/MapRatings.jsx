@@ -182,7 +182,7 @@ export default function MapRatings() {
             const pc = countByEvent(spot.id)
             return (
               <Marker
-                key={spot.id + version}
+                key={spot.id}
                 position={[spot.lat, spot.lng]}
                 icon={makeIcon(spot, selected?.id === spot.id, pc)}
                 eventHandlers={{ click: () => setSelected(spot) }}
@@ -235,7 +235,7 @@ export default function MapRatings() {
             const inner = vid ? '▶' : ''
             return (
               <Marker
-                key={'photo-' + p.id + version}
+                key={'photo-' + p.id}
                 position={[p.lat, p.lng]}
                 icon={L.divIcon({
                   className: 'photo-marker',
@@ -258,7 +258,7 @@ export default function MapRatings() {
           const { avg, count } = getAverage(spot.id)
           return (
             <li
-              key={spot.id + version}
+              key={spot.id}
               onClick={() => selectSpot(spot)}
               className="flex cursor-pointer items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm transition-shadow hover:shadow-md"
             >

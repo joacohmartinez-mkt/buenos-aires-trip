@@ -3,9 +3,14 @@ import { Star } from 'lucide-react'
 // Muestra un rating promedio con estrellas (medias incluidas) y, opcional, el
 // conteo de reseñas.
 export default function Stars({ value = 0, count = null, size = 16 }) {
+  const rounded = Math.round(value * 10) / 10
+  const label =
+    value > 0
+      ? `${rounded} de 5 estrellas${count != null && count > 0 ? ` con ${count} ${count === 1 ? 'reseña' : 'reseñas'}` : ''}`
+      : 'Sin calificar'
   return (
-    <div className="flex items-center gap-1.5">
-      <div className="flex">
+    <div className="flex items-center gap-1.5" role="img" aria-label={label}>
+      <div className="flex" aria-hidden="true">
         {[1, 2, 3, 4, 5].map((i) => {
           const fill = Math.max(0, Math.min(1, value - (i - 1)))
           return (

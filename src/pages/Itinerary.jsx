@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Plus } from 'lucide-react'
 import HeroHeader from '../components/HeroHeader'
 import Countdown from '../components/Countdown'
@@ -7,7 +7,9 @@ import LodgingCard from '../components/LodgingCard'
 import Highlights from '../components/Highlights'
 import DayTabs from '../components/DayTabs'
 import ActivityCard from '../components/ActivityCard'
-import EventForm from '../components/EventForm'
+// EventForm arrastra react-leaflet (~150 KB). Lo cargamos on-demand
+// solo cuando el usuario abre el modal de edición.
+const EventForm = lazy(() => import('../components/EventForm'))
 import { DAYS } from '../data/trip'
 import { dayTheme } from '../lib/styles'
 import { getEventsByDay, loadEvents, onEventsChange } from '../lib/events'
@@ -78,7 +80,9 @@ export default function Itinerary() {
       </div>
 
       {form && (
-        <EventForm event={form.event ?? null} defaultDay={activeId} onClose={() => setForm(null)} />
+        <Suspense fallback={null}>
+          <EventForm event={form.event ?? null} defaultDay={activeId} onClose={() => setForm(null)} />
+        </Suspense>
       )}
     </div>
   )
