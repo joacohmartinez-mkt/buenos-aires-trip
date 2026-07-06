@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Star, X, ImagePlus, Trash2, Play } from 'lucide-react'
 import { AUTHORS, getRatingBy, saveRating, deleteRating } from '../lib/ratings'
-import { getPhotosByEvent, photoUrl, loadPhotos, onPhotosChange, isVideo } from '../lib/photos'
+import { getPhotosByEvent, photoUrl, thumbUrl, loadPhotos, onPhotosChange, isVideo } from '../lib/photos'
 import { typeStyle } from '../lib/styles'
 import Lightbox from './Lightbox'
 import PhotoUpload from './PhotoUpload'
@@ -168,19 +168,23 @@ export default function RatingModal({ spot, onClose }) {
               >
                 {isVideo(p) ? (
                   <>
-                    <video
-                      src={photoUrl(p.path)}
-                      muted
-                      playsInline
-                      preload="metadata"
-                      className="h-full w-full object-cover"
-                    />
+                    {thumbUrl(p) ? (
+                      <img src={thumbUrl(p)} alt={p.caption || 'video'} loading="lazy" className="h-full w-full object-cover" />
+                    ) : (
+                      <video
+                        src={photoUrl(p.path)}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="h-full w-full object-cover"
+                      />
+                    )}
                     <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25">
                       <Play size={16} className="text-white drop-shadow" fill="white" />
                     </span>
                   </>
                 ) : (
-                  <img src={photoUrl(p.path)} alt={p.caption || 'foto'} loading="lazy" className="h-full w-full object-cover" />
+                  <img src={thumbUrl(p)} alt={p.caption || 'foto'} loading="lazy" className="h-full w-full object-cover" />
                 )}
               </button>
             ))}

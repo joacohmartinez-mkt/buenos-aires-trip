@@ -9,7 +9,7 @@ import { getMapEvents, loadEvents, onEventsChange } from '../lib/events'
 import {
   getFreePhotos,
   countByEvent,
-  photoUrl,
+  thumbUrl,
   loadPhotos,
   onPhotosChange,
   isVideo,
@@ -229,9 +229,10 @@ export default function MapRatings() {
           {/* Fotos/videos sueltos (sin evento): miniatura propia en el mapa */}
           {getFreePhotos().map((p) => {
             const vid = isVideo(p)
-            const bg = vid
-              ? `background:#111; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;`
-              : `background-image:url('${photoUrl(p.path)}');`
+            const t = thumbUrl(p)
+            const bg = t
+              ? `background-image:url('${t}'); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px; text-shadow:0 1px 4px rgba(0,0,0,0.7);`
+              : `background:#111; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;`
             const inner = vid ? '▶' : ''
             return (
               <Marker

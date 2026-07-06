@@ -19,6 +19,7 @@ import {
   loadPhotos,
   onPhotosChange,
   photoUrl,
+  thumbUrl,
   isVideo,
   movePhotosToAlbum,
   renameAlbum,
@@ -326,8 +327,15 @@ export default function Photos() {
                 className="group relative flex w-28 shrink-0 flex-col overflow-hidden rounded-2xl bg-gray-100 shadow-sm ring-1 ring-black/5 active:scale-[0.98]"
               >
                 <div className="relative aspect-square w-full overflow-hidden bg-gray-200">
-                  {a.cover && !isVideo(a.cover) ? (
-                    <img src={photoUrl(a.cover.path)} alt={a.name || 'álbum'} className="h-full w-full object-cover" loading="lazy" />
+                  {a.cover && thumbUrl(a.cover) ? (
+                    <>
+                      <img src={thumbUrl(a.cover)} alt={a.name || 'álbum'} className="h-full w-full object-cover" loading="lazy" />
+                      {isVideo(a.cover) && (
+                        <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+                          <Play size={22} className="text-white drop-shadow" fill="white" />
+                        </span>
+                      )}
+                    </>
                   ) : a.cover ? (
                     <>
                       <video src={photoUrl(a.cover.path)} muted playsInline preload="metadata" className="h-full w-full object-cover" />
@@ -413,13 +421,17 @@ export default function Photos() {
               >
                 {isVideo(p) ? (
                   <>
-                    <video src={photoUrl(p.path)} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+                    {thumbUrl(p) ? (
+                      <img src={thumbUrl(p)} alt={p.caption || 'video'} loading="lazy" className="h-full w-full object-cover" />
+                    ) : (
+                      <video src={photoUrl(p.path)} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+                    )}
                     <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25">
                       <Play size={26} className="text-white drop-shadow" fill="white" />
                     </span>
                   </>
                 ) : (
-                  <img src={photoUrl(p.path)} alt={p.caption || 'foto'} loading="lazy" className="h-full w-full object-cover transition-transform active:scale-95" />
+                  <img src={thumbUrl(p)} alt={p.caption || 'foto'} loading="lazy" className="h-full w-full object-cover transition-transform active:scale-95" />
                 )}
                 {selectMode && (
                   <span className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow">

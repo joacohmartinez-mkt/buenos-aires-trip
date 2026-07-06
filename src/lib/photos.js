@@ -5,7 +5,12 @@ import { supabase, isSupabaseConfigured } from './supabase'
 
 const EVENT = 'photos-changed'
 const BUCKET = 'fotos'
-const COLS = 'id, event_id, lat, lng, caption, path, media_type, album, created_at'
+const COLS = 'id, event_id, lat, lng, caption, path, media_type, album, thumb_path, created_at'
+const COLS_LEGACY = 'id, event_id, lat, lng, caption, path, media_type, album, created_at'
+
+// Compatibilidad: si la DB todavía no tiene la columna thumb_path (migración
+// pendiente), caemos al esquema viejo y no generamos miniaturas.
+let hasThumbCol = true
 
 let cache = []
 const notify = () => window.dispatchEvent(new Event(EVENT))
@@ -49,6 +54,15 @@ export function photoUrl(path) {
   return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
 }
 
+// URL de la miniatura (~320px) para grillas. Fallback para fotos viejas sin
+// thumb: la imagen original. Para videos sin thumb devuelve '' (la grilla
+// cae al <video preload="metadata"> de siempre).
+export function thumbUrl(p) {
+  if (!supabase || !p) return ''
+  if (p.thumb_path) return photoUrl(p.thumb_path)
+  return isVideo(p) ? '' : photoUrl(p.path)
+}
+
 // ---- Carga ----
 export async function loadPhotos() {
   if (!isSupabaseConfigured) {
@@ -56,10 +70,18 @@ export async function loadPhotos() {
     notify()
     return cache
   }
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('photos')
-    .select(COLS)
+    .select(hasThumbCol ? COLS : COLS_LEGACY)
     .order('created_at', { ascending: false })
+  // Migración pendiente: reintentar sin thumb_path.
+  if (error && hasThumbCol && /thumb_path/i.test(error.message || '')) {
+    hasThumbCol = false
+    ;({ data, error } = await supabase
+      .from('photos')
+      .select(COLS_LEGACY)
+      .order('created_at', { ascending: false }))
+  }
   if (!error && Array.isArray(data)) {
     cache = data
     notify()
@@ -97,73 +119,138 @@ function extForFile(file) {
   return 'jpg'
 }
 
+// ---- Miniatura de video (primer frame → JPEG) ----
+// Best-effort: si el navegador no puede decodificar el video, devuelve null
+// y la grilla cae al <video preload="metadata"> de siempre.
+function makeVideoThumb(file, maxSide = 320, quality = 0.7) {
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (blob) => {
+      if (settled) return
+      settled = true
+      URL.revokeObjectURL(url)
+      resolve(blob ?? null)
+    }
+    const url = URL.createObjectURL(file)
+    const video = document.createElement('video')
+    video.muted = true
+    video.playsInline = true
+    video.preload = 'auto'
+    video.src = url
+    video.onerror = () => finish(null)
+    video.onloadeddata = () => {
+      // Saltar un toque adelante para evitar el frame negro inicial.
+      try {
+        video.currentTime = Math.min(0.5, (video.duration || 1) / 2)
+      } catch {
+        finish(null)
+      }
+    }
+    video.onseeked = () => {
+      try {
+        const scale = Math.min(1, maxSide / Math.max(video.videoWidth, video.videoHeight))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.max(1, Math.round(video.videoWidth * scale))
+        canvas.height = Math.max(1, Math.round(video.videoHeight * scale))
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+        canvas.toBlob((blob) => finish(blob), 'image/jpeg', quality)
+      } catch {
+        finish(null)
+      }
+    }
+    setTimeout(() => finish(null), 8000)
+  })
+}
+
+// Pool simple de concurrencia: corre `tasks` con hasta `limit` en paralelo.
+async function runPool(tasks, limit = 3) {
+  let next = 0
+  async function worker() {
+    while (next < tasks.length) {
+      const idx = next++
+      await tasks[idx]()
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker))
+}
+
 // ---- Subir / borrar ----
-export async function uploadPhoto(
-  file,
-  { eventId = null, lat = null, lng = null, caption = '', album = null } = {}
-) {
-  if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
-  const isVid = (file?.type || '').startsWith('video/')
+// Prepara y sube UN archivo (media + thumb + insert). Usado por uploadPhotos.
+async function uploadOne(f, meta) {
+  const isVid = (f.type || '').startsWith('video/')
   const media_type = isVid ? 'video' : 'image'
-  const blob = isVid ? file : await resizeImage(file)
-  const ext = isVid ? extForFile(file) : 'jpg'
-  const contentType = isVid ? (file.type || 'video/mp4') : 'image/jpeg'
-  const path = `${crypto.randomUUID()}.${ext}`
+  const id = crypto.randomUUID()
+  const ext = isVid ? extForFile(f) : 'jpg'
+  const contentType = isVid ? (f.type || 'video/mp4') : 'image/jpeg'
+  const path = `${id}.${ext}`
+
+  // Media principal + miniatura (~320px) en paralelo.
+  const [blob, thumbBlob] = await Promise.all([
+    isVid ? Promise.resolve(f) : resizeImage(f),
+    hasThumbCol ? (isVid ? makeVideoThumb(f) : resizeImage(f, 320, 0.7)) : Promise.resolve(null),
+  ])
+
+  // La miniatura es best-effort: si falla, la grilla usa el archivo original.
+  let thumb_path = null
+  if (hasThumbCol && thumbBlob && thumbBlob !== f) {
+    const tp = `${id}_thumb.jpg`
+    const { error: tErr } = await supabase.storage
+      .from(BUCKET)
+      .upload(tp, thumbBlob, { contentType: 'image/jpeg', upsert: false })
+    if (!tErr) thumb_path = tp
+  }
+
   const { error: upErr } = await supabase.storage
     .from(BUCKET)
     .upload(path, blob, { contentType, upsert: false })
   if (upErr) throw upErr
-  const cleanAlbum = album && album.trim() ? album.trim() : null
-  const { error: insErr } = await supabase
-    .from('photos')
-    .insert({ event_id: eventId, lat, lng, caption: caption ?? '', path, media_type, album: cleanAlbum })
+
+  const cleanAlbum = meta.album && meta.album.trim() ? meta.album.trim() : null
+  const record = {
+    event_id: meta.eventId ?? null,
+    lat: meta.lat ?? null,
+    lng: meta.lng ?? null,
+    caption: meta.caption ?? '',
+    path,
+    media_type,
+    album: cleanAlbum,
+  }
+  if (hasThumbCol) record.thumb_path = thumb_path
+  const { error: insErr } = await supabase.from('photos').insert(record)
   if (insErr) throw insErr
-  await loadPhotos()
 }
 
-// Subir varios archivos con la misma metadata. onProgress(i, total) tras cada uno.
+export async function uploadPhoto(file, meta = {}) {
+  const res = await uploadPhotos([file], meta)
+  if (res.errors.length) throw res.errors[0]
+}
+
+// Subir varios archivos con la misma metadata, de a 3 en paralelo.
+// onProgress(done, total) tras cada uno.
 export async function uploadPhotos(files, meta = {}, onProgress) {
   if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
   const list = Array.from(files)
   const errors = []
   let done = 0
-  for (const f of list) {
+  const tasks = list.map((f) => async () => {
     try {
-      const isVid = (f.type || '').startsWith('video/')
-      const media_type = isVid ? 'video' : 'image'
-      const blob = isVid ? f : await resizeImage(f)
-      const ext = isVid ? extForFile(f) : 'jpg'
-      const contentType = isVid ? (f.type || 'video/mp4') : 'image/jpeg'
-      const path = `${crypto.randomUUID()}.${ext}`
-      const { error: upErr } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, blob, { contentType, upsert: false })
-      if (upErr) throw upErr
-      const cleanAlbum = meta.album && meta.album.trim() ? meta.album.trim() : null
-      const { error: insErr } = await supabase.from('photos').insert({
-        event_id: meta.eventId ?? null,
-        lat: meta.lat ?? null,
-        lng: meta.lng ?? null,
-        caption: meta.caption ?? '',
-        path,
-        media_type,
-        album: cleanAlbum,
-      })
-      if (insErr) throw insErr
+      await uploadOne(f, meta)
     } catch (e) {
       console.error('uploadPhotos error', e)
       errors.push(e)
     }
     done += 1
     onProgress?.(done, list.length)
-  }
+  })
+  await runPool(tasks, 3)
   await loadPhotos()
   return { done, total: list.length, errors }
 }
 
 export async function deletePhoto(photo) {
   if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
-  await supabase.storage.from(BUCKET).remove([photo.path])
+  const paths = [photo.path, photo.thumb_path].filter(Boolean)
+  await supabase.storage.from(BUCKET).remove(paths)
   const { error } = await supabase.from('photos').delete().eq('id', photo.id)
   if (error) throw error
   await loadPhotos()
@@ -204,7 +291,7 @@ export async function emptyAlbum(name) {
 export async function deletePhotos(photos) {
   if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
   if (!photos || photos.length === 0) return
-  const paths = photos.map((p) => p.path).filter(Boolean)
+  const paths = photos.flatMap((p) => [p.path, p.thumb_path]).filter(Boolean)
   const ids = photos.map((p) => p.id)
   if (paths.length) await supabase.storage.from(BUCKET).remove(paths)
   const { error } = await supabase.from('photos').delete().in('id', ids)

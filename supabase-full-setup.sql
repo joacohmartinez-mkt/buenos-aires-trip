@@ -61,11 +61,13 @@ create table if not exists public.photos (
   path       text not null,                 -- ruta del archivo en Storage
   media_type text not null default 'image', -- 'image' | 'video'
   album      text,                          -- nombre libre de carpeta/álbum
+  thumb_path text,                          -- miniatura ~320px (jpeg) para grillas
   created_at timestamptz default now()
 );
 -- Para bases creadas antes de estas columnas:
 alter table public.photos add column if not exists media_type text not null default 'image';
 alter table public.photos add column if not exists album text;
+alter table public.photos add column if not exists thumb_path text;
 alter table public.photos enable row level security;
 drop policy if exists "photos_all" on public.photos;
 create policy "photos_all" on public.photos for all using (true) with check (true);
