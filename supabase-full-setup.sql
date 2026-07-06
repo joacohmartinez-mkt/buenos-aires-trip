@@ -46,7 +46,7 @@ alter table public.events enable row level security;
 drop policy if exists "events_all" on public.events;
 create policy "events_all" on public.events for all using (true) with check (true);
 
--- ---------- FOTOS ----------
+-- ---------- FOTOS / VIDEOS ----------
 create table if not exists public.photos (
   id uuid primary key default gen_random_uuid(),
   event_id   uuid references public.events(id) on delete set null,
@@ -54,8 +54,13 @@ create table if not exists public.photos (
   lng        double precision,
   caption    text default '',
   path       text not null,                 -- ruta del archivo en Storage
+  media_type text not null default 'image', -- 'image' | 'video'
+  album      text,                          -- nombre libre de carpeta/álbum
   created_at timestamptz default now()
 );
+-- Para bases creadas antes de estas columnas:
+alter table public.photos add column if not exists media_type text not null default 'image';
+alter table public.photos add column if not exists album text;
 alter table public.photos enable row level security;
 drop policy if exists "photos_all" on public.photos;
 create policy "photos_all" on public.photos for all using (true) with check (true);

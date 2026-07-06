@@ -8,11 +8,11 @@ import { getAverage, onRatingsChange, loadRatings } from '../lib/ratings'
 import { getMapEvents, loadEvents, onEventsChange } from '../lib/events'
 import {
   getFreePhotos,
-  getPhotosByEvent,
   countByEvent,
   photoUrl,
   loadPhotos,
   onPhotosChange,
+  isVideo,
 } from '../lib/photos'
 import Stars from '../components/Stars'
 import RatingModal from '../components/RatingModal'
@@ -74,7 +74,7 @@ export default function MapRatings() {
   const [filterDay, setFilterDay] = useState(0)
   const [selected, setSelected] = useState(null)
   const [modalSpot, setModalSpot] = useState(null)
-  const [lightbox, setLightbox] = useState(null) // array de fotos | null
+  const [lightbox, setLightbox] = useState(null) // { kind: 'event'|'single', eventId?, id? }
   const [version, setVersion] = useState(0)
 
   // Cargar eventos + calificaciones + fotos al montar y refrescar al cambiar.
@@ -198,7 +198,7 @@ export default function MapRatings() {
                     </div>
                     {pc > 0 && (
                       <button
-                        onClick={() => setLightbox(getPhotosByEvent(spot.id))}
+                        onClick={() => setLightbox({ kind: 'event', eventId: spot.id })}
                         className="mt-2 w-full rounded-lg bg-gray-100 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-200"
                       >
                         📷 Ver {pc} {pc === 1 ? 'foto' : 'fotos'}
@@ -216,20 +216,27 @@ export default function MapRatings() {
             )
           })}
 
-          {/* Fotos sueltas (sin evento): miniatura propia en el mapa */}
-          {getFreePhotos().map((p) => (
-            <Marker
-              key={'photo-' + p.id + version}
-              position={[p.lat, p.lng]}
-              icon={L.divIcon({
-                className: 'photo-marker',
-                html: `<div style="background-image:url('${photoUrl(p.path)}')"></div>`,
-                iconSize: [44, 44],
-                iconAnchor: [22, 22],
-              })}
-              eventHandlers={{ click: () => setLightbox([p]) }}
-            />
-          ))}
+          {/* Fotos/videos sueltos (sin evento): miniatura propia en el mapa */}
+          {getFreePhotos().map((p) => {
+            const vid = isVideo(p)
+            const bg = vid
+              ? `background:#111; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;`
+              : `background-image:url('${photoUrl(p.path)}');`
+            const inner = vid ? '▶' : ''
+            return (
+              <Marker
+                key={'photo-' + p.id + version}
+                position={[p.lat, p.lng]}
+                icon={L.divIcon({
+                  className: 'photo-marker',
+                  html: `<div style="${bg}">${inner}</div>`,
+                  iconSize: [44, 44],
+                  iconAnchor: [22, 22],
+                })}
+                eventHandlers={{ click: () => setLightbox({ kind: 'single', id: p.id }) }}
+              />
+            )
+          })}
         </MapContainer>
       </div>
 
@@ -284,7 +291,7 @@ export default function MapRatings() {
       </ul>
 
       {modalSpot && <RatingModal spot={modalSpot} onClose={() => setModalSpot(null)} />}
-      {lightbox && <Lightbox photos={lightbox} onClose={() => setLightbox(null)} />}
+      {lightbox && <Lightbox source={lightbox} onClose={() => setLightbox(null)} />}
     </div>
   )
 }

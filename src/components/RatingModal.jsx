@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Star, X, ImagePlus, Trash2 } from 'lucide-react'
 import { AUTHORS, getRatingBy, saveRating, deleteRating } from '../lib/ratings'
-import { getPhotosByEvent, photoUrl, uploadPhoto, loadPhotos, onPhotosChange } from '../lib/photos'
+import { getPhotosByEvent, photoUrl, uploadPhoto, loadPhotos, onPhotosChange, isVideo } from '../lib/photos'
+import { Play } from 'lucide-react'
 import { typeStyle } from '../lib/styles'
 import Lightbox from './Lightbox'
 
@@ -144,11 +145,30 @@ export default function RatingModal({ spot, onClose }) {
 
           {/* Fotos del lugar */}
           <p className={label}>Fotos del lugar</p>
-          <input ref={fileRef} type="file" accept="image/*" onChange={addPhoto} className="hidden" />
+          <input ref={fileRef} type="file" accept="image/*,video/*" onChange={addPhoto} className="hidden" />
           <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto">
             {photos.map((p, i) => (
-              <button key={p.id} onClick={() => setLb(i)} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                <img src={photoUrl(p.path)} alt={p.caption || 'foto'} loading="lazy" className="h-full w-full object-cover" />
+              <button
+                key={p.id}
+                onClick={() => setLb(i)}
+                className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100"
+              >
+                {isVideo(p) ? (
+                  <>
+                    <video
+                      src={photoUrl(p.path)}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="h-full w-full object-cover"
+                    />
+                    <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25">
+                      <Play size={16} className="text-white drop-shadow" fill="white" />
+                    </span>
+                  </>
+                ) : (
+                  <img src={photoUrl(p.path)} alt={p.caption || 'foto'} loading="lazy" className="h-full w-full object-cover" />
+                )}
               </button>
             ))}
             <button
@@ -190,7 +210,13 @@ export default function RatingModal({ spot, onClose }) {
         </div>
       </div>
 
-      {lb != null && <Lightbox photos={photos} initialIndex={lb} onClose={() => setLb(null)} />}
+      {lb != null && (
+        <Lightbox
+          source={{ kind: 'event', eventId: spot.id }}
+          initialIndex={lb}
+          onClose={() => setLb(null)}
+        />
+      )}
     </>
   )
 }
