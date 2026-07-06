@@ -121,6 +121,46 @@ export async function uploadPhoto(
   await loadPhotos()
 }
 
+// Subir varios archivos con la misma metadata. onProgress(i, total) tras cada uno.
+export async function uploadPhotos(files, meta = {}, onProgress) {
+  if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
+  const list = Array.from(files)
+  const errors = []
+  let done = 0
+  for (const f of list) {
+    try {
+      const isVid = (f.type || '').startsWith('video/')
+      const media_type = isVid ? 'video' : 'image'
+      const blob = isVid ? f : await resizeImage(f)
+      const ext = isVid ? extForFile(f) : 'jpg'
+      const contentType = isVid ? (f.type || 'video/mp4') : 'image/jpeg'
+      const path = `${crypto.randomUUID()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, blob, { contentType, upsert: false })
+      if (upErr) throw upErr
+      const cleanAlbum = meta.album && meta.album.trim() ? meta.album.trim() : null
+      const { error: insErr } = await supabase.from('photos').insert({
+        event_id: meta.eventId ?? null,
+        lat: meta.lat ?? null,
+        lng: meta.lng ?? null,
+        caption: meta.caption ?? '',
+        path,
+        media_type,
+        album: cleanAlbum,
+      })
+      if (insErr) throw insErr
+    } catch (e) {
+      console.error('uploadPhotos error', e)
+      errors.push(e)
+    }
+    done += 1
+    onProgress?.(done, list.length)
+  }
+  await loadPhotos()
+  return { done, total: list.length, errors }
+}
+
 export async function deletePhoto(photo) {
   if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
   await supabase.storage.from(BUCKET).remove([photo.path])

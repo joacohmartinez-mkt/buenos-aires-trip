@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ImagePlus, ChevronLeft, Folder, Play } from 'lucide-react'
 import {
   getPhotos,
@@ -26,14 +26,11 @@ export default function Photos() {
     return onPhotosChange(() => setV((v) => v + 1))
   }, [])
 
-  const albums = useMemo(() => getAlbums(), [/* re-run on any state change */ view])
-  // Nota: getAlbums lee la caché viva; el setV fuerza re-render, y useMemo se recomputa.
-
-  const visiblePhotos = useMemo(() => {
-    if (view === ALL) return getPhotos()
-    if (view === NONE) return getPhotosByAlbum(null)
-    return getPhotosByAlbum(view)
-  }, [view, albums])
+  // Se leen fresh cada render — la caché de photos.js es la fuente de verdad
+  // y el setV al recibir onPhotosChange dispara el re-render.
+  const albums = getAlbums()
+  const visiblePhotos =
+    view === ALL ? getPhotos() : view === NONE ? getPhotosByAlbum(null) : getPhotosByAlbum(view)
 
   const isFilteredView = view !== ALL
   const currentAlbumName =
