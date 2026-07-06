@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, Trash2, ChevronLeft, ChevronRight, FolderInput } from 'lucide-react'
 import {
   photoUrl,
   deletePhoto,
@@ -8,8 +8,10 @@ import {
   getPhotosByAlbum,
   onPhotosChange,
   isVideo,
+  movePhotosToAlbum,
 } from '../lib/photos'
 import { getEventById } from '../lib/events'
+import AlbumPicker from './AlbumPicker'
 
 // source: { kind: 'all' | 'none' | 'album' | 'event' | 'single', name?, eventId?, id? }
 function resolvePhotos(source) {
@@ -34,6 +36,7 @@ export default function Lightbox({ source, initialIndex = 0, onClose }) {
   const [index, setIndex] = useState(initialIndex)
   const [busy, setBusy] = useState(false)
   const [version, setVersion] = useState(0)
+  const [moving, setMoving] = useState(false)
 
   // Refresca cada vez que cambia la caché de fotos (borrado, subida, etc.).
   useEffect(() => onPhotosChange(() => setVersion((v) => v + 1)), [])
@@ -78,7 +81,7 @@ export default function Lightbox({ source, initialIndex = 0, onClose }) {
       role="dialog"
       aria-modal="true"
     >
-      {/* Barra superior: cerrar + borrar */}
+      {/* Barra superior: cerrar + mover + borrar */}
       <div className="flex items-center justify-between p-4 text-white" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
@@ -87,14 +90,24 @@ export default function Lightbox({ source, initialIndex = 0, onClose }) {
         >
           <X size={22} />
         </button>
-        <button
-          onClick={handleDelete}
-          disabled={busy}
-          aria-label="Borrar"
-          className="rounded-full bg-white/10 p-2 text-rose-300 backdrop-blur hover:bg-white/20 disabled:opacity-40"
-        >
-          <Trash2 size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMoving(true)}
+            disabled={busy}
+            aria-label="Mover a álbum"
+            className="rounded-full bg-white/10 p-2 text-white backdrop-blur hover:bg-white/20 disabled:opacity-40"
+          >
+            <FolderInput size={20} />
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={busy}
+            aria-label="Borrar"
+            className="rounded-full bg-white/10 p-2 text-rose-300 backdrop-blur hover:bg-white/20 disabled:opacity-40"
+          >
+            <Trash2 size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Media (imagen o video). Toca fuera del media para cerrar. */}
@@ -106,6 +119,7 @@ export default function Lightbox({ source, initialIndex = 0, onClose }) {
             controls
             autoPlay
             playsInline
+            preload="auto"
             className="max-h-full max-w-full rounded-lg"
             onClick={(e) => e.stopPropagation()}
           />
@@ -153,6 +167,27 @@ export default function Lightbox({ source, initialIndex = 0, onClose }) {
           )}
         </div>
       </div>
+
+      {moving && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <AlbumPicker
+            title="Mover a álbum"
+            currentAlbum={photo.album || null}
+            onPick={async (name) => {
+              setBusy(true)
+              try {
+                await movePhotosToAlbum([photo.id], name)
+              } catch {
+                /* noop */
+              } finally {
+                setBusy(false)
+                setMoving(false)
+              }
+            }}
+            onClose={() => setMoving(false)}
+          />
+        </div>
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   X,
   ImagePlus,
@@ -12,7 +12,7 @@ import {
   Loader2,
   Check,
 } from 'lucide-react'
-import { uploadPhotos, getAlbums } from '../lib/photos'
+import { uploadPhotos, getAlbums, onPhotosChange } from '../lib/photos'
 import LocationSearch from './LocationSearch'
 
 const STEPS = [
@@ -35,7 +35,22 @@ export default function PhotoUpload({ defaultEventId = null, defaultAlbum = null
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [error, setError] = useState('')
 
-  const existingAlbums = useMemo(() => getAlbums().map((a) => a.name).filter(Boolean), [])
+  // Re-lee albums cuando cambia la caché (subida en otra tab, etc.)
+  const [albumsTick, setAlbumsTick] = useState(0)
+  useEffect(() => onPhotosChange(() => setAlbumsTick((v) => v + 1)), [])
+  const existingAlbums = useMemo(
+    () => getAlbums().map((a) => a.name).filter(Boolean),
+    [albumsTick]
+  )
+
+  // Liberá los ObjectURL de previews al desmontar el wizard (memory leak fix).
+  const itemsRef = useRef(items)
+  itemsRef.current = items
+  useEffect(() => {
+    return () => {
+      itemsRef.current.forEach((it) => URL.revokeObjectURL(it.preview))
+    }
+  }, [])
 
   function addFiles(fileList) {
     const arr = Array.from(fileList || [])

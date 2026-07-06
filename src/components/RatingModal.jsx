@@ -186,10 +186,10 @@ export default function RatingModal({ spot, onClose }) {
             ))}
             <button
               onClick={() => setAddingPhotos(true)}
-              className="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600"
+              className="flex h-16 min-w-[68px] shrink-0 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-rose-300 bg-rose-50/50 text-rose-500 hover:border-rose-400 hover:bg-rose-50"
             >
-              <ImagePlus size={16} />
-              <span className="text-[9px] font-semibold">Agregar</span>
+              <ImagePlus size={20} />
+              <span className="text-[10px] font-bold">Agregar</span>
             </button>
           </div>
           <p className="mt-1.5 text-[10px] text-gray-400">

@@ -169,6 +169,49 @@ export async function deletePhoto(photo) {
   await loadPhotos()
 }
 
+// Mueve N fotos a un álbum (null = "Sin álbum").
+export async function movePhotosToAlbum(photoIds, albumName) {
+  if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
+  if (!photoIds || photoIds.length === 0) return
+  const clean = albumName && albumName.trim() ? albumName.trim() : null
+  const { error } = await supabase.from('photos').update({ album: clean }).in('id', photoIds)
+  if (error) throw error
+  await loadPhotos()
+}
+
+// Renombra un álbum en todas las fotos que lo tengan.
+export async function renameAlbum(oldName, newName) {
+  if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
+  const from = (oldName || '').trim()
+  const to = (newName || '').trim()
+  if (!from || !to || from === to) return
+  const { error } = await supabase.from('photos').update({ album: to }).eq('album', from)
+  if (error) throw error
+  await loadPhotos()
+}
+
+// Saca el álbum de todas las fotos (las deja en "Sin álbum") — no borra archivos.
+export async function emptyAlbum(name) {
+  if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
+  const from = (name || '').trim()
+  if (!from) return
+  const { error } = await supabase.from('photos').update({ album: null }).eq('album', from)
+  if (error) throw error
+  await loadPhotos()
+}
+
+// Borra en batch (usa el mismo loop que deletePhoto pero optimizado).
+export async function deletePhotos(photos) {
+  if (!isSupabaseConfigured) throw new Error('Supabase no configurado')
+  if (!photos || photos.length === 0) return
+  const paths = photos.map((p) => p.path).filter(Boolean)
+  const ids = photos.map((p) => p.id)
+  if (paths.length) await supabase.storage.from(BUCKET).remove(paths)
+  const { error } = await supabase.from('photos').delete().in('id', ids)
+  if (error) throw error
+  await loadPhotos()
+}
+
 export function onPhotosChange(cb) {
   window.addEventListener(EVENT, cb)
   window.addEventListener('focus', cb)
