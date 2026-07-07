@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Heart, Lock } from 'lucide-react'
 import { verifyAppPin, unlockApp } from '../lib/appAccess'
 
@@ -12,32 +12,29 @@ export default function LockScreen() {
   const [opening, setOpening] = useState(false)
   const inputRef = useRef(null)
 
-  // Al completar los 4 dígitos, probar automáticamente.
-  useEffect(() => {
-    if (pin.length !== PIN_LENGTH || checking) return
-    let alive = true
+  // Valida el PIN directamente (sin useEffect para evitar carreras con el
+  // hash async y el re-render). Al completar los 4 dígitos se dispara solo.
+  async function submit(candidate) {
+    if (checking) return
     setChecking(true)
-    verifyAppPin(pin).then((ok) => {
-      if (!alive) return
-      if (ok) {
-        // Pausa breve con el corazón lleno y recién ahí entrar.
-        setOpening(true)
-        setTimeout(unlockApp, 600)
-      } else {
-        setError(true)
-        setPin('')
-        setChecking(false)
-        setTimeout(() => setError(false), 900)
-      }
-    })
-    return () => {
-      alive = false
+    const ok = await verifyAppPin(candidate)
+    if (ok) {
+      // Pausa breve con el corazón lleno y recién ahí entrar.
+      setOpening(true)
+      setTimeout(unlockApp, 600)
+    } else {
+      setError(true)
+      setPin('')
+      setChecking(false)
+      setTimeout(() => setError(false), 900)
     }
-  }, [pin, checking])
+  }
 
   function handleChange(e) {
+    if (checking || opening) return
     const digits = e.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH)
     setPin(digits)
+    if (digits.length === PIN_LENGTH) submit(digits)
   }
 
   return (
