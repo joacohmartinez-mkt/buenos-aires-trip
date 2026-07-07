@@ -3,6 +3,8 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import BottomNav from './components/BottomNav'
 import EditFab from './components/EditFab'
 import ConfirmHost from './components/ConfirmHost'
+import LockScreen from './components/LockScreen'
+import { useAppUnlocked } from './lib/appAccess'
 import Itinerary from './pages/Itinerary'
 
 // La landing (Itinerary) va en el bundle inicial — es la ruta más visitada.
@@ -37,6 +39,11 @@ function Footer() {
 }
 
 export default function App() {
+  const unlocked = useAppUnlocked()
+
+  // Puerta de entrada: sin el PIN no se monta nada de la app (ni se cargan datos).
+  if (!unlocked) return <LockScreen />
+
   return (
     <div className="relative mx-auto min-h-screen max-w-app bg-amber-50/60 shadow-xl shadow-amber-900/10">
       <ScrollToTop />
