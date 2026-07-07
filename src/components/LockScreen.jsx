@@ -1,44 +1,64 @@
-import { useRef, useState } from 'react'
-import { Heart, Lock } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { Heart, Lock, Delete } from 'lucide-react'
 import { verifyAppPin, unlockApp } from '../lib/appAccess'
 
 const PIN_LENGTH = 4
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', null, '0', 'del']
 
-// Pantalla de entrada de la app: foto de portada + PIN de la pareja.
+// Pantalla de entrada: portada + teclado numérico propio (no depende del
+// teclado del sistema, que en mobile daba problemas de foco/autofill).
 export default function LockScreen() {
   const [pin, setPin] = useState('')
   const [error, setError] = useState(false)
   const [checking, setChecking] = useState(false)
   const [opening, setOpening] = useState(false)
-  const inputRef = useRef(null)
 
-  // Valida el PIN directamente (sin useEffect para evitar carreras con el
-  // hash async y el re-render). Al completar los 4 dígitos se dispara solo.
-  async function submit(candidate) {
-    if (checking) return
+  const submit = useCallback(async (candidate) => {
     setChecking(true)
     const ok = await verifyAppPin(candidate)
     if (ok) {
-      // Pausa breve con el corazón lleno y recién ahí entrar.
       setOpening(true)
       setTimeout(unlockApp, 600)
     } else {
       setError(true)
-      setPin('')
-      setChecking(false)
-      setTimeout(() => setError(false), 900)
+      setTimeout(() => {
+        setPin('')
+        setError(false)
+        setChecking(false)
+      }, 700)
     }
-  }
+  }, [])
 
-  function handleChange(e) {
-    if (checking || opening) return
-    const digits = e.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH)
-    setPin(digits)
-    if (digits.length === PIN_LENGTH) submit(digits)
-  }
+  const press = useCallback(
+    (key) => {
+      if (checking || opening) return
+      if (key === 'del') {
+        setError(false)
+        setPin((p) => p.slice(0, -1))
+        return
+      }
+      setPin((p) => {
+        if (p.length >= PIN_LENGTH) return p
+        const next = p + key
+        if (next.length === PIN_LENGTH) submit(next)
+        return next
+      })
+    },
+    [checking, opening, submit]
+  )
+
+  // Teclado físico (para PC).
+  useEffect(() => {
+    function onKey(e) {
+      if (/^[0-9]$/.test(e.key)) press(e.key)
+      else if (e.key === 'Backspace') press('del')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [press])
 
   return (
-    <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center overflow-hidden bg-gray-900">
+    <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-between overflow-hidden bg-gray-900">
       {/* Foto de fondo con velo cálido */}
       <img
         src="./portada.jpg"
@@ -49,13 +69,13 @@ export default function LockScreen() {
           e.currentTarget.style.display = 'none'
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-rose-950/80" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/45 to-rose-950/85" />
 
-      {/* Contenido */}
+      {/* Cabecera */}
       <div
         className={[
-          'relative flex w-full max-w-xs flex-col items-center px-6 text-center transition-all duration-500',
-          opening ? 'scale-110 opacity-0' : 'opacity-100',
+          'relative flex flex-col items-center px-6 pt-16 text-center transition-all duration-500',
+          opening ? 'scale-105 opacity-0' : 'opacity-100',
         ].join(' ')}
       >
         <div
@@ -73,56 +93,72 @@ export default function LockScreen() {
         <p className="mt-2 text-sm font-semibold text-white/90">
           Joaquín & Nicole <span className="text-rose-300">❤️</span>
         </p>
-        <p className="mt-6 text-xs font-medium uppercase tracking-widest text-white/60">
+        <p className="mt-8 text-xs font-medium uppercase tracking-widest text-white/60">
           Nuestro número
         </p>
 
-        {/* Cajitas del PIN (el input real está invisible encima) */}
-        <label className={['relative mt-3 block cursor-text', error ? 'animate-shake' : ''].join(' ')}>
-          <input
-            ref={inputRef}
-            autoFocus
-            value={pin}
-            onChange={handleChange}
-            inputMode="numeric"
-            pattern="[0-9]*"
-            type="password"
-            autoComplete="off"
-            aria-label="PIN de entrada"
-            className="absolute inset-0 h-full w-full cursor-text opacity-0"
-          />
-          <span className="flex gap-2.5">
-            {Array.from({ length: PIN_LENGTH }).map((_, i) => {
-              const filled = i < pin.length
-              return (
-                <span
-                  key={i}
-                  className={[
-                    'flex h-14 w-12 items-center justify-center rounded-2xl border text-2xl font-bold text-white backdrop-blur transition-all',
-                    filled
-                      ? 'border-rose-300/70 bg-white/20'
-                      : 'border-white/25 bg-white/10',
-                    error ? 'border-rose-400' : '',
-                  ].join(' ')}
-                >
-                  {filled ? '•' : ''}
-                </span>
-              )
-            })}
-          </span>
-        </label>
+        {/* Puntos del PIN */}
+        <div className={['mt-4 flex gap-4', error ? 'animate-shake' : ''].join(' ')} aria-live="polite">
+          {Array.from({ length: PIN_LENGTH }).map((_, i) => {
+            const filled = i < pin.length
+            return (
+              <span
+                key={i}
+                className={[
+                  'h-4 w-4 rounded-full border-2 transition-all',
+                  error
+                    ? 'border-rose-400 bg-rose-400'
+                    : filled
+                    ? 'border-white bg-white'
+                    : 'border-white/50 bg-transparent',
+                ].join(' ')}
+              />
+            )
+          })}
+        </div>
 
         <p
           className={[
             'mt-4 h-5 text-sm font-medium transition-opacity',
             error ? 'text-rose-300 opacity-100' : 'opacity-0',
           ].join(' ')}
-          aria-live="polite"
         >
           Ese no es nuestro número 💔
         </p>
+      </div>
 
-        <p className="mt-10 text-[11px] text-white/40">
+      {/* Teclado numérico propio */}
+      <div
+        className={[
+          'relative w-full max-w-xs px-8 pb-10 transition-all duration-500',
+          opening ? 'translate-y-4 opacity-0' : 'opacity-100',
+        ].join(' ')}
+      >
+        <div className="grid grid-cols-3 gap-4">
+          {KEYS.map((key, i) => {
+            if (key === null) return <span key={i} />
+            const isDel = key === 'del'
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => press(key)}
+                disabled={checking || opening}
+                aria-label={isDel ? 'Borrar' : key}
+                className={[
+                  'flex h-16 w-16 items-center justify-center justify-self-center rounded-full text-2xl font-semibold text-white transition-transform active:scale-90 disabled:opacity-40',
+                  isDel
+                    ? 'text-white/80'
+                    : 'bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25',
+                ].join(' ')}
+              >
+                {isDel ? <Delete size={24} /> : key}
+              </button>
+            )
+          })}
+        </div>
+
+        <p className="mt-6 text-center text-[11px] text-white/40">
           Un rincón solo para nosotros dos ✨
         </p>
       </div>
