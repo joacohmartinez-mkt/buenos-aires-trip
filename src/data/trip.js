@@ -47,6 +47,7 @@ export const DAY_FILTERS = [
   { day: 1, label: 'Vie 3', color: 'amber' },
   { day: 2, label: 'Sáb 4', color: 'emerald' },
   { day: 3, label: 'Dom 5', color: 'rose' },
+  { day: 4, label: 'Lun 6', color: 'sky' },
 ]
 
 export const DAYS = [

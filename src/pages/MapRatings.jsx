@@ -26,6 +26,7 @@ const DAY_BADGE = {
   amber: 'bg-amber-100 text-amber-700',
   emerald: 'bg-emerald-100 text-emerald-700',
   rose: 'bg-rose-100 text-rose-700',
+  sky: 'bg-sky-100 text-sky-700',
   gray: 'bg-gray-100 text-gray-600',
 }
 
@@ -34,6 +35,7 @@ const PILL_ACTIVE = {
   amber: 'bg-amber-500 text-white shadow',
   emerald: 'bg-emerald-500 text-white shadow',
   rose: 'bg-rose-500 text-white shadow',
+  sky: 'bg-sky-500 text-white shadow',
 }
 
 function makeIcon(spot, active, photoCount = 0) {
