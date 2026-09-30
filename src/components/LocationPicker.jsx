@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
+import BaseTiles from './BaseTiles'
 import { Search, X } from 'lucide-react'
 
 const pinIcon = L.divIcon({
@@ -91,10 +92,7 @@ export default function LocationPicker({ value, onChange }) {
 
       <div className="h-48 overflow-hidden rounded-xl ring-1 ring-gray-200">
         <MapContainer center={center} zoom={value ? 15 : 12} scrollWheelZoom className="h-full w-full">
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            subdomains="abcd"
-          />
+          <BaseTiles />
           <ClickCatcher onPick={onChange} />
           <Flyer target={flyTarget} />
           <Resizer />

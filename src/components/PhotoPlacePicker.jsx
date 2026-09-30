@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
+import BaseTiles from './BaseTiles'
 import { getMapEvents } from '../lib/events'
 import { typeStyle } from '../lib/styles'
 
@@ -55,10 +56,7 @@ export default function PhotoPlacePicker({ value, onChange }) {
     <div>
       <div className="h-52 overflow-hidden rounded-xl ring-1 ring-gray-200">
         <MapContainer center={[-34.6, -58.42]} zoom={12} scrollWheelZoom zoomControl={false} className="h-full w-full">
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            subdomains="abcd"
-          />
+          <BaseTiles />
           <FitAll events={events} />
           <ClickCatcher onPick={(loc) => onChange({ lat: loc.lat, lng: loc.lng })} />
           {events.map((ev) => (

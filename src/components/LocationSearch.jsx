@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
+import BaseTiles from './BaseTiles'
 import { Search, X, MapPin, Loader2, Sparkles } from 'lucide-react'
 import { getMapEvents } from '../lib/events'
 import { typeStyle } from '../lib/styles'
@@ -243,10 +244,7 @@ export default function LocationSearch({ value, onChange }) {
       {/* Mapa */}
       <div className="mt-2 h-44 overflow-hidden rounded-xl ring-1 ring-gray-200">
         <MapContainer center={center} zoom={value ? 15 : 12} scrollWheelZoom className="h-full w-full">
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            subdomains="abcd"
-          />
+          <BaseTiles />
           <ClickCatcher onPick={pickMap} />
           <Flyer target={flyTarget} />
           <Resizer />

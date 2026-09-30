@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
+import BaseTiles from '../components/BaseTiles'
 import { Star, Plus, ImagePlus } from 'lucide-react'
 import { DAY_FILTERS } from '../data/trip'
 import { typeStyle } from '../lib/styles'
@@ -170,12 +171,7 @@ export default function MapRatings() {
           zoomControl={false}
           className="h-full w-full"
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            subdomains="abcd"
-            maxZoom={20}
-          />
+          <BaseTiles attribution />
           <MapController selected={selected} spots={filtered} fitKey={filterDay} />
           {filtered.map((spot) => {
             const { avg, count } = getAverage(spot.id)
